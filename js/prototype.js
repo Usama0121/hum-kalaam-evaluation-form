@@ -2255,7 +2255,7 @@ Element.Methods = {
         element.innerHTML = content.stripScripts();
       }
 
-      content.evalScripts.bind(content).p_defer();
+      content.innerText;
       return element;
     }
 

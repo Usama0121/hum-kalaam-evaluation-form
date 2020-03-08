@@ -30,6 +30,10 @@ Calendar.DAY_NAMES = [
   'Sunday'
 ];
 
+Calendar.MID_DAY_NAMES = [
+  'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
+];
+
 Calendar.SHORT_DAY_NAMES = [
   'S', 'M', 'T', 'W', 'T', 'F', 'S', 'S'
 ];
@@ -235,6 +239,105 @@ Calendar.defaultCloseHandler = function(calendar)
   calendar.hide();
 };
 
+// For Hackweek..
+Calendar.hermesDateListPopups = function(event) {
+  var popup = event.target.up('table').down('.dateListPopup');
+  var popupType = event.target.hasClassName('select-month') ? 'months' : 'years';
+
+  // Close month&year popup
+  if (popup.hasClassName('active') && popup.getAttribute('popup-type') === popupType) {
+    popup.removeClassName('active');
+    popup.setAttribute('popup-type', '');
+    return;
+  }
+
+  // Clear active date item.
+  popup.querySelectorAll('.selected').forEach(function(s) {
+    s.removeClassName('selected');
+  });
+
+  // Open popup
+  if (popupType === 'months') { // Months
+    var currentMonth = event.target.calendarv2.date.getMonth() + 1;
+    popup.setAttribute('popup-type',  'months');
+    popup.addClassName('active');
+    var month = popup.down('[month="' +  currentMonth + '"]').addClassName('selected');
+    popup.scrollTop = month.offsetTop;
+  } else { // Years
+    var currentYear = event.target.calendarv2.date.getFullYear();
+    popup.setAttribute('popup-type',  'years');
+    popup.addClassName('active');
+    var year = popup.down('[year="' +  currentYear + '"]').addClassName('selected');
+    popup.scrollTop = year.offsetTop;
+  }
+};
+
+function handlePopupUI(calendar, style) {
+  var month = '', year = '';
+  var container = calendar.container;
+  var title = container.querySelector('.title');
+  var nextYear = container.querySelector('.nextYear');
+  var prevYear = container.querySelector('.previousYear');
+  var nextMonth = container.querySelector('.nextMonth');
+  var prevMonth = container.querySelector('.previousMonth');
+
+  if (style) {
+    calendar.container.style.width = style.width + 'px';
+  }
+
+  if (title && nextYear && nextMonth && prevYear && prevMonth) {
+    var dateArray = title.textContent.split(' ');
+    month = dateArray[0];
+    year = dateArray[1];
+
+    var checkHeader = container.querySelectorAll('.calendar-new-header');
+    if (checkHeader && checkHeader.length > 0) {
+      for (var index = 0; index < checkHeader.length; index++) {
+        checkHeader[index].remove();
+      }
+    }
+
+    var newHeader = document.createElement('div');
+    newHeader.classList.add('calendar-new-header');
+    newHeader.innerHTML = '<div class="calendar-new-month"><span>'+month+'<span></div><div class="calendar-new-year">'+year+'</div>';
+    title.parentNode.insertAdjacentElement('beforebegin', newHeader);
+
+    var newMonthNode = newHeader.querySelector('.calendar-new-month');
+    var newYearNode = newHeader.querySelector('.calendar-new-year');
+    
+    newMonthNode.append(prevMonth);
+    newMonthNode.append(nextMonth);
+
+    newYearNode.append(prevYear);
+    newYearNode.append(nextYear);
+
+    title.style.display = 'none';
+  }
+}
+
+// This function will be remove after hacweek..
+Calendar.hermesDateListItemClick = function(event) {
+  var calendar = event.target.calendarv2;
+  var popup = calendar.container.down('.dateListPopup');
+  var monthTitle = calendar.container.getElementsBySelector('.select-month')[0];
+  var yearTitle = calendar.container.getElementsBySelector('.select-year')[0];
+
+  if (event.target.hasClassName('month')) {
+    var monthID= parseInt(event.target.getAttribute('month')) - 1;
+    calendar.date.setMonth(monthID);
+    monthTitle.update(Calendar.MONTH_NAMES[monthID]);
+  } else if (event.target.hasClassName('year')) {
+    var yearID= parseInt(event.target.getAttribute('year'));
+    calendar.date.setYear(yearID);
+    yearTitle.update(yearID);
+  }
+
+  calendar.setDate(calendar.date);
+  calendar.update(calendar.date);
+  calendar.callSelectHandler();
+  popup.removeClassName('active');
+  popup.setAttribute('popup-type', '');
+}
 
 //------------------------------------------------------------------------------
 // Calendar Setup
@@ -253,6 +356,16 @@ Calendar.setup = function(params)
   param_default('parentElement', null);
   param_default('selectHandler',  null);
   param_default('closeHandler', null);
+
+  var triggerElement = $(params.triggerElement || params.dateField);
+  var isNewTheme = triggerElement.getAttribute('data-version') === 'v2';
+  var isLiteMode = triggerElement.className.indexOf('icon-liteMode') > -1;
+  var isAllowTime = triggerElement.getAttribute('data-allow-time') === 'Yes';
+
+  var targetElem = triggerElement.parentElement;
+  if (!isLiteMode || isAllowTime) {
+    targetElem = targetElem.parentElement;
+  }
 
   // In-Page Calendar
   if (params.parentElement)
@@ -291,7 +404,6 @@ Calendar.setup = function(params)
   // multiple calendars on the same page.
   else
   {
-    var triggerElement = $(params.triggerElement || params.dateField);
     var calendar = new Calendar();
     calendar.limits = params.limits;
     if(calendar.limits) {
@@ -310,15 +422,27 @@ Calendar.setup = function(params)
     }
     if (params.dateField){
       Date.parseDate(calendar.dateField.value || calendar.dateField.innerHTML, calendar.dateFormat);          
-    }    
-    triggerElement.onclick = function() {
+    }
+
+    triggerElement.onclick = function(event) {
       if(calendar.dateField && (
         calendar.dateField.disabled ||
         calendar.dateField.hasClassName('conditionallyDisabled')
       )) {
         return false;
       }
-      calendar.showAtElement(triggerElement);
+      
+      if (isNewTheme) {
+        handlePopupUI(calendar, { width: targetElem.offsetWidth });
+        if (isAllowTime) {
+          calendar.showAtElement(targetElem.querySelector(':scope > span input'));
+        } else {
+          calendar.showAtElement(targetElem.querySelector('span input'));
+        }
+      } else {
+        calendar.showAtElement(triggerElement);
+      }
+
       return calendar;
     };
 
@@ -358,6 +482,13 @@ Calendar.setup = function(params)
     calendar.dateField.up("li").observe("date:changed", function() {
       getDateFromField();
     });
+    if (isNewTheme) {
+      if (!isLiteMode || isAllowTime) {
+        calendar.container.className += ' extended';
+        calendar.container.setAttribute('data-version', 'v2');
+      }
+      handlePopupUI(calendar, { width: targetElem.offsetWidth });
+    }
   } catch(e) {
     console.log(e);
   }
@@ -698,9 +829,23 @@ Calendar.prototype = {
       }
     );
 
-    this.container.getElementsBySelector('td.title')[0].update(
-      Calendar.MONTH_NAMES[month] + ' ' + this.date.getFullYear()
-    );
+    if (!JotForm.isSourceTeam && !JotForm.isMarvelTeam && !JotForm.isHermesTeam) {
+      this.container.getElementsBySelector('td.title')[0].update(
+        Calendar.MONTH_NAMES[month] + ' ' + this.date.getFullYear()
+      );
+    } else if (JotForm.isHermesTeam) { 
+      var monthTitle = this.container.getElementsBySelector('.select-month')[0];
+      var yearTitle = this.container.getElementsBySelector('.select-year')[0];
+
+      monthTitle.update(Calendar.MONTH_NAMES[month]);
+      yearTitle.update(this.date.getFullYear());
+    } else {
+      var titleMonthElement = this.container.querySelector('.titleMonth');
+      if (titleMonthElement) titleMonthElement.innerText = Calendar.MONTH_NAMES[month];
+
+      var titleYearElement = this.container.querySelector('.titleYear');
+      if (titleYearElement) titleYearElement.innerText = this.date.getFullYear();
+    }
   },
 
   checkPastAndFuture: function() {
@@ -797,19 +942,104 @@ Calendar.prototype = {
     table.appendChild(thead);
 
     // Title Placeholder
-    var row  = new Element('tr');
-    var cell = new Element('td', { colSpan: 7 } );
-    cell.addClassName('title');
-    row.appendChild(cell);
-    thead.appendChild(row);
+    if (JotForm.isHermesTeam) {
+      var row = new Element('tr', { className: 'tableTitle' });
+      var dateContainer = new Element('td', { colSpan: 7 });
+      
+      var month = new Element('div', { className: 'select-month unselectable' });
+      month.calendarv2 = this;
+      month.unselectable = 'on';
+      dateContainer.appendChild(month);
+      
+      var year = new Element('div', { className: 'select-year unselectable' });
+      year.calendarv2 = this;
+      year.unselectable = 'on';
+      dateContainer.appendChild(year);
+      
+      Event.observe(month, 'mousedown', Calendar.hermesDateListPopups);
+      Event.observe(year, 'mousedown', Calendar.hermesDateListPopups);
+
+      row.appendChild(dateContainer);
+      thead.appendChild(row);
+    }
+    
+    if (!JotForm.isSourceTeam && !JotForm.isMarvelTeam && !JotForm.isHermesTeam) {
+      var row = new Element('tr');
+      var cell = new Element('td', { colSpan: 7 });
+      cell.addClassName('title');
+      row.appendChild(cell);
+      thead.appendChild(row);
+    }
 
     // Calendar Navigation
     row = new Element('tr');
-    this._drawButtonCell(row, '&#x00ab;', 1, Calendar.NAV_PREVIOUS_YEAR, "previousYear");
-    this._drawButtonCell(row, '&#x2039;', 1, Calendar.NAV_PREVIOUS_MONTH, "previousMonth");
-    this._drawButtonCell(row, Calendar.TODAY,    3, Calendar.NAV_TODAY, "todayButton");
-    this._drawButtonCell(row, '&#x203a;', 1, Calendar.NAV_NEXT_MONTH, "nextMonth");
-    this._drawButtonCell(row, '&#x00bb;', 1, Calendar.NAV_NEXT_YEAR, "nextYear");
+    if (JotForm.isSourceTeam) {
+      this._drawButtonCell(row, '&#x2039;', 1, Calendar.NAV_PREVIOUS_MONTH, 'previousMonth');
+      var titleMonthTd = new Element('td');
+      titleMonthTd.setAttribute('colspan', 2);
+      var titleMonth = new Element('div');
+      titleMonth.addClassName('titleMonth');
+      titleMonthTd.appendChild(titleMonth);
+      row.appendChild(titleMonthTd);
+      this._drawButtonCell(row, '&#x203a;', 1, Calendar.NAV_NEXT_MONTH, 'nextMonth');
+
+      this._drawButtonCell(row, '&#x2039;', 1, Calendar.NAV_PREVIOUS_YEAR, 'previousYear');
+      var titleYearTd = new Element('td');
+      var titleYear = new Element('div');
+      titleYear.addClassName('titleYear');
+      titleYearTd.appendChild(titleYear);
+      row.appendChild(titleYearTd);
+      this._drawButtonCell(row, '&#x203a;', 1, Calendar.NAV_NEXT_YEAR, 'nextYear');
+    } else if (JotForm.isMarvelTeam) {
+      var calendarTd = new Element('td');
+      calendarTd.setAttribute('colspan', 7);
+      var calendarDiv = new Element('div');
+      calendarDiv.addClassName('calendarWrapper');
+  
+      var monthDiv = new Element('div');
+      monthDiv.addClassName('monthWrapper');
+
+      var titleMonth = new Element('div');
+      titleMonth.addClassName('titleMonth');
+      monthDiv.appendChild(titleMonth);
+      calendarDiv.appendChild(monthDiv);
+
+      var monthDirectionDiv = new Element('div');
+      monthDirectionDiv.addClassName('controlWrapper-month')
+      this._drawButtonCellasDiv(monthDirectionDiv, '&#xfe3f;', 1, Calendar.NAV_PREVIOUS_MONTH, 'previousMonth');
+      this._drawButtonCellasDiv(monthDirectionDiv, '&#xfe40;', 1, Calendar.NAV_NEXT_MONTH, 'nextMonth');
+      monthDiv.appendChild(monthDirectionDiv);
+
+      var yearDiv = new Element('div');
+      yearDiv.addClassName('yearWrapper');
+
+      var titleYear = new Element('div');
+      titleYear.addClassName('titleYear');
+      yearDiv.appendChild(titleYear);
+      calendarDiv.appendChild(yearDiv);
+
+      var yearDirectionDiv = new Element('div');
+      yearDirectionDiv.addClassName('controlWrapper-year')
+      this._drawButtonCellasDiv(yearDirectionDiv, '&#xfe3f;', 1, Calendar.NAV_PREVIOUS_YEAR, 'previousYear');
+      this._drawButtonCellasDiv(yearDirectionDiv, '&#xfe40;', 1, Calendar.NAV_NEXT_YEAR, 'nextYear');
+      yearDiv.appendChild(yearDirectionDiv);
+
+      row.appendChild(calendarTd);
+      calendarTd.appendChild(calendarDiv);
+    } else if (JotForm.isHermesTeam) {
+      this._drawButtonCell(row, '', 1, Calendar.NAV_PREVIOUS_YEAR, "previousYear");
+      this._drawButtonCell(row, '', 1, Calendar.NAV_PREVIOUS_MONTH, "previousMonth");
+      this._drawButtonCell(row, Calendar.TODAY, 3, Calendar.NAV_TODAY, "todayButton");
+      this._drawButtonCell(row, '', 1, Calendar.NAV_NEXT_MONTH, "nextMonth");
+      this._drawButtonCell(row, '', 1, Calendar.NAV_NEXT_YEAR, "nextYear");
+    } else {
+      this._drawButtonCell(row, '&#x00ab;', 1, Calendar.NAV_PREVIOUS_YEAR, "previousYear");
+      this._drawButtonCell(row, '&#x2039;', 1, Calendar.NAV_PREVIOUS_MONTH, "previousMonth");
+      this._drawButtonCell(row, Calendar.TODAY, 3, Calendar.NAV_TODAY, "todayButton");
+      this._drawButtonCell(row, '&#x203a;', 1, Calendar.NAV_NEXT_MONTH, "nextMonth");
+      this._drawButtonCell(row, '&#x00bb;', 1, Calendar.NAV_NEXT_YEAR, "nextYear");
+    }
+
     thead.appendChild(row);
 
     // Day Names
@@ -819,7 +1049,13 @@ Calendar.prototype = {
     var endDay = (this.startOnMonday)?7:6;
 
     for (var i = startDay; i <= endDay; ++i) {
-      cell = new Element('th').update(Calendar.SHORT_DAY_NAMES[i]);
+
+      if (JotForm.isMarvelTeam) {
+        cell = new Element('th').update(Calendar.MID_DAY_NAMES[i]);
+      } else {
+        cell = new Element('th').update(Calendar.SHORT_DAY_NAMES[i]);
+      }
+
       if (i === startDay || i == endDay){
         cell.addClassName('weekend');          
       }
@@ -836,6 +1072,34 @@ Calendar.prototype = {
         cell = row.appendChild(new Element('td'));
         cell.calendar = this;
       }
+    }
+
+    if (JotForm.isHermesTeam) {
+      var dateListPopup = new Element('div', { className: 'dateListPopup' });
+      var months = new Element('div', { className: 'months' });
+      var years = new Element('div', { className: 'years' });
+
+      Calendar.MONTH_NAMES.forEach(function(month, index) {
+        var mnth = new Element('span', { className: 'month unselectable', month: index + 1 }).update(month);
+        mnth.calendarv2 = this;
+        mnth.unselectable = 'on';
+        months.appendChild(mnth);
+      }.bind(this));
+
+      for(var i = Calendar.prototype.maxYear; i >= Calendar.prototype.minYear; i--) {
+        var year = new Element('span', { className: 'year unselectable', year: i }).update(i);
+        year.calendarv2 = this;
+        year.unselectable = 'on';
+        years.appendChild(year);
+      };
+
+      dateListPopup.appendChild(months);
+      dateListPopup.appendChild(years);
+      dateListPopup.setStyle({ display: 'none' });
+      table.appendChild(dateListPopup);
+
+      Event.observe(months, 'click', Calendar.hermesDateListItemClick);
+      Event.observe(years, 'click', Calendar.hermesDateListItemClick);
     }
 
     // Calendar Container (div)
@@ -874,6 +1138,21 @@ Calendar.prototype = {
     return cell;
   },
 
+  _drawButtonCellasDiv: function(parent, text, colSpan, navAction, extraClass)
+  {
+    var cell          = new Element('div');
+    if (colSpan > 1) {
+        cell.colSpan = colSpan;
+    }
+    cell.className    = 'button' + (extraClass ? " " + extraClass : "");
+    cell.calendar     = this;
+    cell.navAction    = navAction;
+    cell.innerHTML    = text;
+    cell.unselectable = 'on'; // IE
+    parent.appendChild(cell);
+    return cell;
+  },
+
 
 
   //------------------------------------------------------------------------------
@@ -884,7 +1163,11 @@ Calendar.prototype = {
   callSelectHandler: function()
   {
     if (this.selectHandler){
-      this.selectHandler(this, this.date.print(this.dateFormat));        
+      this.selectHandler(this, this.date.print(this.dateFormat));
+      var isNewTheme = this.container.getAttribute('data-version') === 'v2';
+      if (isNewTheme) {
+        handlePopupUI(this);
+      }
     }
   },
 
@@ -924,6 +1207,12 @@ Calendar.prototype = {
   showAtElement: function(element)
   {
     var firstElement = element.up('div').down('input');
+
+    if (JotForm.isHermesTeam) {
+      var positions = element.getBoundingClientRect();
+      this.showAt(positions.right - 254, positions.bottom + window.scrollY);
+      return;
+    }
 
     if(firstElement.up('div').visible() === false){
       firstElement = element; 
@@ -987,6 +1276,10 @@ Calendar.prototype = {
   {
     if (!date.equalsTo(this.date)){
       this.update(date);        
+      var isNewTheme = this.container.getAttribute('data-version') === 'v2';
+      if (isNewTheme) {
+        handlePopupUI(this);
+      }  
     }
   },
 

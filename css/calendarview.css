@@ -18,7 +18,7 @@ div.calendar td.weekend{
     background:#b5cfe9;
 }
 div.calendar .today{
-    background: #f9621a !important;
+    background: #D9360D !important;
 }
 div.calendar .title, div.calendar .button{
     color:#f9621a;
@@ -66,7 +66,8 @@ div.calendar tr.days td {
 div.calendar tr.days td:hover:not(.unselectable),
 div.calendar td.button:hover:not(.unselectable)
 {
-  background-color: #34ABFA;
+  background-color: #0178b8;
+  color: #fff;
   cursor: pointer;
 }
 
@@ -90,10 +91,10 @@ div.calendar tr.days td.selected
 div.calendar tr.days td.today
 {
   font-weight: bold;
-  color: #D50000;
+  color: #fff;
 }
 
 div.calendar tr.days td.otherDay
 {
-  color: #bbb;
+  color: #95959A;
 }

@@ -496,7 +496,9 @@ Protoplus.ui = {
      * @param {Object} options
      */
     rating: function(element, options){
-
+        var isNewTheme = element.getAttribute('data-version') === 'v2';
+        var starWidth = isNewTheme ? 32 : 16;
+        var starHeight = isNewTheme ? 30 : 16;
         element = $(element);
 
         options = Object.extend({
@@ -520,7 +522,7 @@ Protoplus.ui = {
 
         element.converted = true;
         element.addClassName('form-star-rating');
-        var image = { blank: "0px 0px", over: "-16px 0px", clicked: "-32px 0px", half: "-48px 0px" };
+        var image = { blank: "0px 0px", over: -1 * starWidth + "px 0px", clicked: -2 * starWidth + "px 0px", half: -3 * starWidth + "px 0px" };
         var hidden = new Element("input", {type:"hidden", name:options.name, className:options.inputClassName});
         var stardivs = $A([]);
 
@@ -528,7 +530,7 @@ Protoplus.ui = {
         element.disabled = (options.disabled=="true" || options.disabled === true)? true : false;
         element.setStyle({
             display:'inline-block',
-            width: ((parseInt(options.stars, 10) + ( /* add place for reset button */ options.resetButton ? 1 : 0)) * 20) + "px",
+            width: ((parseInt(options.stars, 10) + ( /* add place for reset button */ options.resetButton ? 1 : 0)) * (starWidth + 4)) + "px",
             cursor: options.disabled ? "default" : "pointer" /*, clear:"left"*/
         });
         element.setUnselectable();
@@ -560,7 +562,8 @@ Protoplus.ui = {
         element.setRating = setStar;
 
         $A($R(1, options.stars)).each(function(i){
-            var star = new Element("div").setStyle({height:"16px", width:"16px", margin:"0.5px", cssFloat:"left", backgroundImage:"url("+options.imagePath+")"});
+            var starStyle = { height: starHeight + "px", width: starWidth + "px", margin: "0.5px", cssFloat: "left", backgroundImage: "url("+options.imagePath+")" };
+            var star = new Element("div").setStyle(starStyle);
             star.observe("mouseover", function(){
                 if(!element.disabled){
                     var desc = $A(element.descendants());

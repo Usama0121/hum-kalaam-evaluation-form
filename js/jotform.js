@@ -202,7 +202,7 @@ var JotForm = {
         taxTax: 'Tax'
     },
     validationRegexes: {
-        email: /^\S[a-z0-9\/.!#$%&'*+\/=?\^_`{|}~\-]*(?:\.[a-z0-9!#$%&'*+\/=?\^_`{|}~\-]+)*@(?:[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9\-]*[a-z0-9])$/i,
+        email: /^(?:[\sa-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[\sa-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*|"(?:[\s\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9]){1,}|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-zA-Z0-9-]*[a-zA-Z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/,
         alphanumeric: /^[\u00C0-\u1FFF\u2C00-\uD7FFa-zA-Z0-9\s]+$/,
         numeric: /^(-?\d+[\.\,]?)+$/,
         numericDotStart: /^([\.]\d+)+$/,  //accept numbers starting with dot
@@ -211,7 +211,60 @@ var JotForm = {
         cyrillic: /^[абвгдеёжзийклмнопрстуфхцчшщьыъэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯ\s]*$/,
         url: /(http|ftp|https){0,1}:{0,1}[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?/
     },
-    freeEmailAddresses: ['gmail', 'aim', 'outlook', 'hotmail', 'yahoo', 'mail', 'inbox'],
+    freeEmailAddresses: [
+        'gmail',
+        'aim',
+        'outlook',
+        'hotmail',
+        'yahoo',
+        'mail',
+        'inbox',
+        'gmx',
+        'yandex',
+        'tutanota',
+        'ymail',
+        'mailfence',
+        'hushmail',
+        'protonmail',
+        'rediffmail',
+        'msn',
+        'live',
+        'aol',
+        'currently',
+        'att',
+        'mailinator',
+        'getnada',
+        'abyssmail',
+        'boximail',
+        'clrmail',
+        'dropjar',
+        'getairmail',
+        'givmail',
+        'inboxbear',
+        'tafmail',
+        'vomoto',
+        'zetmail',
+        'sharklasers',
+        'guerrillamail',
+        'grr',
+        'guerrillamailblock',
+        'pokemail',
+        'spam4',
+        'emailcu',
+        'mybx',
+        'fsmilitary',
+        'yopmail',
+        'cool',
+        'jetable',
+        'nospam',
+        'nomail',
+        'monmail',
+        'monemail',
+        'moncourrier',
+        'courriel',
+        'speed',
+        'mega'
+    ],
 
     paymentFields: [
       'control_2co',
@@ -240,6 +293,7 @@ var JotForm = {
       'control_paypal',
       'control_paypalexpress',
       'control_paypalpro',
+      'control_paypalcomplete',
       'control_payu',
       'control_sofort',
       'control_skrill',
@@ -299,7 +353,8 @@ var JotForm = {
             'control_paysafe',
             'control_gocardless',
             'control_paypalSPB',
-            'control_cybersource'
+            'control_cybersource',
+            'control_paypalcomplete'
         ];
 
         var sendAsHiddenField = [
@@ -342,7 +397,7 @@ var JotForm = {
                 var encryptedFieldName = field.name;
                 var isMultipleSelectionInput = ['checkbox', 'radio'].include(field.type);
 
-                if (selfSubmitFields.indexOf(fieldType) > -1 && JotForm.paymentTotal > 0) {
+                if (selfSubmitFields.indexOf(fieldType) > -1 && JotForm.paymentTotal > 0 && JotForm.isPaymentSelected()) {
                     submitFormAfterEncrypt = false;
                 }
 
@@ -452,6 +507,15 @@ var JotForm = {
             }
         }
     },
+    getAPIEndpoint: function() {
+        var origin = window.location.origin;
+
+        if(origin.include('jotform.pro')) {
+            return origin + '/API';
+        } else {
+            return 'https://api.jotform.com';
+        }
+    },
     /**
      * Changes only the given texsts
      * @param {Object} newTexts
@@ -518,6 +582,16 @@ var JotForm = {
     init: function (callback) {
         var ready = function () {
             try {
+                if ( typeof $$('.jotform-form') !== 'undefined' && 
+                    typeof $$('.jotform-form')[0] !== 'undefined' && 
+                    typeof $$('.jotform-form')[0].reset === 'function' && 
+                    typeof $$('.jotform-form')[0].autocomplete !== 'undefined' && 
+                    $$('.jotform-form')[0].autocomplete == 'off') {
+                        if ( window.navigator.userAgent.indexOf("MSIE ") !== -1 || window.navigator.userAgent.indexOf('Trident/') !== -1 ) {
+                            $$('.jotform-form')[0].reset();
+                        }
+                }
+
                 this.populateGet();
 
                 if (document.get.debug == "1") {
@@ -568,6 +642,14 @@ var JotForm = {
 
                 if (this.payment === "paypalpro") {
                     this.handlePaypalPro();
+                }
+
+                if (this.payment === "paypalcomplete") {
+                    this.handlePaypalComplete();   
+                }
+
+                if (this.payment === "cybersource") {
+                    this.handleCybersource();
                 }
 
                 if (this.payment === "braintree") {
@@ -624,7 +706,12 @@ var JotForm = {
                 this.checkEmbed();
 
                 if ($$('.form-product-has-subproducts').length > 0) {
-                    this.handlePaymentSubProducts();
+                    var queryParameters = window.location.search.substring(1);
+                    if (queryParameters === "comparePaymentForm=v1") {
+                        this.handlePaymentSubProductsV1();
+                    } else {
+                        this.handlePaymentSubProducts();
+                    }
                 }
 
                 if (window.location.hash === "#hw-izmir") {
@@ -699,6 +786,12 @@ var JotForm = {
                 this.setFocusEvents();
                 this.disableAcceptonChrome();
                 this.handleScreenshot();
+                this.handleSignatureEvents();
+                if (JotForm.newDefaultTheme) {
+                    this.initTimev2Inputs();
+                    this.initOtherV2Options();
+                }
+
                 // this.handleChinaCensorship();
 
                 $A(document.forms).each(function (form) {
@@ -767,7 +860,7 @@ var JotForm = {
                         var banner = document.createElement('a');
                         banner.target = '_blank';
                         banner.href = 'https://www.jotform.com/?utm_source=powered_by_jotform&utm_medium=banner&utm_term=' + _formID + '&utm_content=powered_by_jotform_text&utm_campaign=powered_by_jotform_signup_hp';
-                        banner.setText('Powered by JotForm');
+                        banner.setText(JotForm.poweredByText);
                         banner.style.display = 'inline-block';
                         banner.style.textDecoration = 'none';
                         var fontColor = '#000000';
@@ -802,16 +895,42 @@ var JotForm = {
                     }
                 }
 
+                var createBadgeWrapperEl = function() {
+                    var div = document.createElement('div');
+                    div.setAttribute('class', 'badge-wrapper');
+                    return div;
+                }
+                var appendBadgeWrapperIntoForm = function() {
+                    var submitButton = document.querySelector('.form-submit-button');
+                    var badgeWrapper = submitButton.parentNode.querySelector('.badge-wrapper');
+                    if (badgeWrapper) return badgeWrapper;
+                    var el = createBadgeWrapperEl();
+                    submitButton.parentNode.appendChild(el);
+                    return el;
+                }
+                var appendBadgeIntoForm = function(banner) {
+                    var badgeWrapper = appendBadgeWrapperIntoForm();
+                    badgeWrapper.appendChild(banner);
+                    banner.addEventListener('load', JotForm.handleIFrameHeight);
+                }
                 if (JotForm.showHIPAABadge) {
-                    var button = document.querySelector('.form-submit-button');
-                    var buttonWrapper = button.parentNode;
                     var banner = new Element('img', {
-                        src: 'https://cdn.jotfor.ms/assets/img/uncategorized/hipaa_badge.png',
-                        style: 'display:block;width:160px;',
+                        class: 'hipaa-badge',
+                        src: 'https://cdn.jotfor.ms/assets/img/uncategorized/hipaa-badge.png',
+                        style: 'display:block;width:110px;',
                     });
-                    buttonWrapper.appendChild(banner);
+                    appendBadgeIntoForm(banner);
                 } else if (JotForm.showJotFormPowered == "old_footer") {
                     constructSubmitBanner();
+                }
+                if (JotForm.showA11yBadge) {
+                    var banner = new Element('img', {
+                        class: 'accessibility-badge',
+                        src: 'https://cdn.jotfor.ms/assets/img/uncategorized/access-image.png',
+                        alt: 'accessibility badge',
+                        style: 'display:block;width:74px;',
+                    });
+                    appendBadgeIntoForm(banner);
                 }
 
                 if (typeof JotForm.enterprise !== "undefined" && JotForm.enterprise) {
@@ -824,6 +943,11 @@ var JotForm = {
                     var form = document.querySelector('.jotform-form');
                     var fileServer = new Element('input', { id: 'file_server', type: 'hidden', name: 'file_server', value: 'hipaa-app1' });
                     form.appendChild(fileServer);
+                }
+
+                // Campaign Injection
+                if (typeof JotForm.forms[0].id !== "undefined" && false) {
+                    JotForm.loadScript('https://www.jotform.com/jfFormFooter/assets/js/main.min.js?v_' + (new Date()).getTime());
                 }
             } catch (err) {
                 JotForm.error(err);
@@ -841,6 +965,8 @@ var JotForm = {
                 }
               });
             }
+
+            this.handleWidgetStyles();
 
             this.initializing = false; // Initialization is over
         }.bind(this);
@@ -1532,10 +1658,10 @@ var JotForm = {
             }
 
             // Create temp upload folder key
-            if (!this.tempUploadFolderInjected) {
+            if (!JotForm.tempUploadFolderInjected) {
                 var hidden = new Element('input', {type: 'hidden', name: 'temp_upload_folder'}).setValue(uniq);
-                f.insert({top: hidden});
-                this.tempUploadFolderInjected = true;
+                f.insert({bottom: hidden});
+                JotForm.tempUploadFolderInjected = true;
             }
 
             // Handle limited extensions
@@ -1549,9 +1675,13 @@ var JotForm = {
             }
 
             //Emre: to make editing "text of multifile upload button" possible (33318)
-            var m, buttonText, cancelText, ofText;
+            var m, buttonText, cancelText = 'Cancel', ofText = 'of';
             if (m = file.previous('.qq-uploader-buttonText-value')) {
                 buttonText = m.innerHTML;
+            }
+            if (m = file.up('li.form-line').querySelector('.jfUpload-button')) {
+                var isV2 = m.readAttribute('data-version') === 'v2';
+                buttonText = isV2 ? m.innerHTML : m.innerText;
             }
             if (!buttonText) {
                 buttonText = "Upload a File";
@@ -1623,14 +1753,14 @@ var JotForm = {
                                     type: 'hidden',
                                     name: 'temp_upload[' + qFolder + '][]'
                                 });
-                                f.insert({ top: uploadHidden });
+                                f.insert({ bottom: uploadHidden });
                             }
                             uploadHidden.setValue(filename);
 
                             var $fileServer = $('file_server');
                             if (!$fileServer) {
                                 $fileServer = new Element('input', { id: 'file_server', type: 'hidden', name: 'file_server' });
-                                f.insert({ top: $fileServer });
+                                f.insert({ bottom: $fileServer });
                             }
                             $fileServer.setValue(response.fileServer);
 
@@ -1737,10 +1867,10 @@ var JotForm = {
             }
 
             // Create temp upload folder key
-            if (!this.tempUploadFolderInjected) {
+            if (!JotForm.tempUploadFolderInjected) {
                 var hidden = new Element('input', {type: 'hidden', name: 'temp_upload_folder'}).setValue(uniq);
                 f.insert({top: hidden});
-                this.tempUploadFolderInjected = true;
+                JotForm.tempUploadFolderInjected = true;
                 window.setFolder();
             }
 
@@ -1792,9 +1922,7 @@ var JotForm = {
         if (!$('hidden_submit_form')) {
             var iframe = new Element('iframe', {name: 'hidden_submit', id: 'hidden_submit_form'}).hide();
             iframe.observe('load', function () {
-                if (!isCardForm) {
-                    JotForm.makeUploadChecks();
-                }
+                JotForm.makeUploadChecks();
                 $$('.form-saving-indicator').invoke('remove');
                 JotForm.saving = false;
                 JotForm.enableButtons();
@@ -1831,51 +1959,40 @@ var JotForm = {
             });
         }
         if(options && !!options.async){
-
-          $(frm).request({
-            onCreate: function(response) {
-              var t = response.transport;
-              t.setRequestHeader = t.setRequestHeader.wrap(function(original, k, v) {
-                if (/^(accept|accept-language|content-language)$/i.test(k))
-                  return original(k, v);
-                if (/^content-type$/i.test(k) &&
-                    /^(application\/x-www-form-urlencoded|multipart\/form-data|text\/plain)(;.+)?$/i.test(v))
-                  return original(k, v);
-                return;
-              });
-            },
-
-            onComplete: function(response) {
-              if (isCardForm) {
-                JotForm.saving = false;
-                JotForm.enableButtons();
-              }
-              if (200 === response.status) {
-                if (options.onSuccessCb) options.onSuccessCb(response);
-              } else {
-                if (options.onFailureCb) options.onFailureCb();
-              }
-
-              if(options.onCompleteCb) options.onCompleteCb();
-
-              frm.writeAttribute('target', '');
-              if (isCardForm) {
-                $('continueLater') && $('continueLater').remove();
-              }
-              $('hidden_submission') && $('hidden_submission').remove();
-
-              $$('.custom-hint-group').each(function (elem) { //reapply textarea hints
-                elem.showCustomPlaceHolder();
-              });
-
-              $$('.form-radio-other,.form-checkbox-other').each(function (el) { //reenable other textbox if not "other" option selected
-                if (!el.checked && JotForm.getOptionOtherInput(el)) {
-                  JotForm.getOptionOtherInput(el).enable();
+            var xhr = new XMLHttpRequest();
+            xhr.withCredentials = true;
+            xhr.open('POST', frm.action, true);
+            xhr.addEventListener('load', function () {
+                var response = this;
+                if (isCardForm) {
+                    JotForm.saving = false;
+                    JotForm.enableButtons();
                 }
-              });
-            }
-          });
+                if (200 === response.status) {
+                    if (options.onSuccessCb) options.onSuccessCb(response);
+                } else {
+                    if (options.onFailureCb) options.onFailureCb();
+                }
 
+                if (options.onCompleteCb) options.onCompleteCb();
+
+                frm.writeAttribute('target', '');
+                if (isCardForm) {
+                    $('continueLater') && $('continueLater').remove();
+                }
+                $('hidden_submission') && $('hidden_submission').remove();
+
+                $$('.custom-hint-group').each(function (elem) { //reapply textarea hints
+                    elem.showCustomPlaceHolder();
+                });
+
+                $$('.form-radio-other,.form-checkbox-other').each(function (el) { //reenable other textbox if not "other" option selected
+                    if (!el.checked && JotForm.getOptionOtherInput(el)) {
+                        JotForm.getOptionOtherInput(el).enable();
+                    }
+                });
+            });
+            xhr.send(new FormData(frm));
         }else{
           frm.submit();
           frm.writeAttribute('target', '');
@@ -2017,6 +2134,16 @@ var JotForm = {
                         JotForm.openInitially = res.currentPage - 1;
                     }
 
+                    if (res.jfFormUserSCL_emailSentTo && !$('jfFormUserSCL_emailSentTo')) {
+                        formIDField.insert({
+                            after: new Element('input', {
+                                type: 'hidden',
+                                name: 'jfFormUserSCL_emailSentTo',
+                                id: 'jfFormUserSCL_emailSentTo'
+                            }).putValue(res.jfFormUserSCL_emailSentTo)
+                        });
+                    }
+
                 }
 
                 // Releasing blocking of next/prev buttons after submissin data filling has done
@@ -2051,6 +2178,92 @@ var JotForm = {
                 JotForm.lastFocus = input;
             });
         });
+        // Will be removed after requirement completed
+        if (JotForm.isComparePaymentFormV1() && window.paymentType === 'product') {
+
+            // Select the product if clicked the product line
+            $$('.form-product-item').each(function (element) {
+                element.observe('click', function (event) {
+                    if (event.target.type !== 'text' &&
+                        event.target.type !== 'select-one' &&
+                        event.target.type !== 'checkbox' &&
+                        event.target.tagName !== 'LABEL' &&
+                        !event.target.hasClassName('image_zoom'))
+                    {
+                        element.down('.form-checkbox').click();
+                    }
+
+                    var dropDownElement = element.down('.form-dropdown');
+                    if (event.target.type === 'checkbox' && dropDownElement) {
+                        var dropDownElementOptions = dropDownElement.options;
+                        var isZeroOptionExistInDropDownElementsOptions = false;
+
+                        for (var i = 0; i < dropDownElementOptions.length; i++) {
+                            if(dropDownElementOptions[i].value === '0' ) {
+                                isZeroOptionExistInDropDownElementsOptions = true;
+                                break;
+                            }
+                        }
+
+                        if (dropDownElement && !event.target.checked && isZeroOptionExistInDropDownElementsOptions) {
+                            dropDownElement.value = "0";
+                        }
+                    }
+                });
+
+                element.observe('change', function (event) {
+                    if (event.target.type === 'select-one') {
+                        if (event.target.value === '0') {
+                            element.classList.remove('p_selected');
+                        } else {
+                            element.classList.add('p_selected');
+                        }
+                    }
+                });
+            });
+
+            $$('.form-checkbox').each(function (element) {
+                if (element.checked) {
+                    element.up('.form-product-item').classList.add('p_selected');
+                }
+
+                element.observe('click', function () {
+                    element.checked ?
+                        element.up('.form-product-item').classList.add('p_selected') :
+                        element.up('.form-product-item').classList.remove('p_selected')
+                });
+            });
+        }
+        if (JotForm.isComparePaymentFormV1() && window.paymentType === 'subscription') {
+
+            // Select the product if clicked the product line
+            $$('.form-product-item').each(function (element) {
+                element.observe('click', function (event) {
+                    if (event.target.type !== 'radio' &&
+                        event.target.type !== 'text' &&
+                        !event.target.hasClassName('image_zoom'))
+                    {
+                        element.down('.form-radio').click();
+                    }
+                });
+            });
+
+            $$('.form-product-item').each(function (element) {
+                element.up('.form-line').classList.add('subscription_cont');
+            });
+
+            $$('.form-product-item .form-radio').each(function (element) {
+                if (element.checked) {
+                    element.up('.form-product-item').classList.add('p_selected');
+                }
+                element.observe('change', function () {
+                    element.up('.form-product-item').classList.add('p_selected')
+                    $$('.form-product-item .form-radio').each(function (subElement) {
+                        if (subElement !== element) subElement.up('.form-product-item').classList.remove('p_selected')
+                    });
+                });
+            });
+        }
     },
     /**
      * Disables Accept for Google Chrome browsers
@@ -2203,7 +2416,7 @@ var JotForm = {
     /**
      * Set current local time if nodefault not set
      */
-    displayLocalTime: function (hh, ii, ampm) {
+    displayLocalTime: function (hh, ii, ampm, v2) {
         if ($(hh) && !$(hh).hasClassName('noDefault')) {
             var date = new Date();
             var hour = date.getHours();
@@ -2218,8 +2431,10 @@ var JotForm = {
             }
 
             var min = date.getMinutes();
-            var step = Number($(ii).options[2].value) - Number($(ii).options[1].value);
-            min = Math.round(min / step) * step;
+            if (!v2) {
+                var step = Number($(ii).options[2].value) - Number($(ii).options[1].value);
+                min = Math.round(min / step) * step;
+            }
             min = this.addZeros(min, 2);
             if (min >= 60) { //ntw roll over to next hour/day
                 min = "00";
@@ -2233,7 +2448,7 @@ var JotForm = {
                 }
             }
             // prepend with zero
-            if (hour < 10 && $(hh).options[1].value.length > 1) {
+            if (hour < 10 && (!!v2 || $(hh).options[1].value.length > 1)) {
                 hour = '0' + hour;
             }
 
@@ -2252,6 +2467,9 @@ var JotForm = {
                     if ($(ampm).select('option[value="AM"]').length > 0) $(ampm).value = 'AM';
                     if ($(ampm + 'Range') && $(ampm + 'Range').select('option[value="AM"]').length > 0) $(ampm + 'Range').value = 'AM';
                 }
+            }
+            if (v2) {
+                $(v2).value = hour + ':' + min;
             }
         }
     },
@@ -2329,7 +2547,7 @@ var JotForm = {
                         if (!_tempDate || !_tempDate.getDate()) {
                             invalidDate(lite_mode, calendar);
                         } else {
-                            calendar.date = _tempDate;
+                            calendar.setDate(_tempDate);
                             calendar.selectHandler(calendar);
                         }
                     } else {
@@ -2343,11 +2561,6 @@ var JotForm = {
                     }
                 }
 
-                $('lite_mode_' + id).observe('keyup', function (e) {
-                    e.stopPropagation();
-                    e.currentTarget.dateChanged(e, calendar);
-                    return false;
-                });
 
                 $('lite_mode_' + id).observe('blur', function (e) {
                     e.stopPropagation();
@@ -2357,9 +2570,16 @@ var JotForm = {
                     return false;
                 });
 
+                $('lite_mode_' + id).observe('keydown', function (e) {
+                    var input = e.target.value;
+                    if(e.key === 'Backspace' && input[input.length-1] === e.target.dataset.seperator) {
+                        input = input.substr(0, input.length-1);
+                    }
+                    e.target.value = input.substr(0, 10);
+                });
+
                 $('lite_mode_' + id).observe('input', function (e) {
                     var input = e.target.value;
-                    if (/\D\/$/.test(input)) input = input.substr(0, input.length - 3);
                     var values = input.split(e.target.dataset.seperator).map(function(v) {
                         return v.replace(/\D/g, '')
                     });
@@ -2373,8 +2593,8 @@ var JotForm = {
                             return (v.length == 4 && i == 0) || (v.length == 2 && i == 1) ? v + e.target.dataset.seperator : v;
                         });
                     }
-                    
-                    e.target.value = output.join('').substr(0, 12);
+                    e.target.value = output.join('').substr(0, 10);
+                    e.currentTarget.dateChanged(e, calendar);
                 });
             }
 
@@ -2386,7 +2606,7 @@ var JotForm = {
                     }, 50);
 
                 };
-                if ($('input_' + id + '_pick').hasClassName('showAutoCalendar')) {
+                if ($('input_' + id + '_pick').hasClassName('showAutoCalendar') || JotForm.isSourceTeam) {
                     var _selectors = [('#day_' + id), ('#month_' + id), ('#year_' + id), ('#lite_mode_' + id)];
                     $$(_selectors.join(',')).each(function(elem) {
                         elem.observe('focus', openCalendar);
@@ -2396,6 +2616,11 @@ var JotForm = {
                 $("year_" + id).observe("blur", function() {
                     calendar.hide();
                 });
+                if ($("lite_mode_" + id)) {
+                    $("lite_mode_" + id).observe("blur", function() {
+                        calendar.hide();
+                    });
+                }
             }
 
         } catch (e) {
@@ -2587,14 +2812,14 @@ var JotForm = {
                 var erroredElement = null;
                 var ignoreBirthdate = isBirthdate && (monthElement.value === "" || dayElement.value === "" || yearElement.value === "");
                 if (!ignoreBirthdate && (monthElement.value != "" || dayElement.value != "" || yearElement.value != "")) {
-                    var month = isBirthdate ? monthElement.selectedIndex :  monthElement.value;
-                    month = parseInt(month, 10);
+                    var _month = isBirthdate ? monthElement.selectedIndex :  monthElement.value;
+                    var month = parseInt(_month, 10);
                     var day = +dayElement.value;
                     var year = +yearElement.value;
 
                     if (isNaN(year) || year < 1) {
                         erroredElement = yearElement;
-                    } else if (isNaN(month) || month < 1 || month > 12) {
+                    } else if (isNaN(_month) || isNaN(month) || month < 1 || month > 12) { // second isNaN check to handle cases like null or "".
                         erroredElement = monthElement;
                     } else if ((isNaN(day) || day < 1)) {
                         erroredElement = dayElement;
@@ -2703,7 +2928,7 @@ var JotForm = {
                 }
 
                 // remove html tags and space chars, to prevent wrong counts on text copied from MS WORD
-                var cleaned_contents = contents.replace(/<.[^<>]*?>/g, ' ').replace(/&nbsp;|&#160;/gi, ' ');
+                var cleaned_contents = contents.replace(/(\<\w*)((\s\/\>)|(.*\<\/\w*\>))/gm, ' ').replace(/&nbsp;|&#160;/gi, ' ');
 
                 $(el.parentNode).removeClassName('form-textarea-limit-indicator-error');
                 JotForm.corrected(el.up('.form-line').down('textarea'));
@@ -3116,14 +3341,18 @@ var JotForm = {
                 });
             } else if (input) {
                 input.value = pair.value.replace(/\{\+\}/g,'{plusSign}').replace(/\+/g, ' ').replace(/\{plusSign\}/g,'+');
+
+                var formLine = input.up('.form-line');
+                var dontStripPlusIn = ["control_textarea"];
+
                 // do not strip plus signs when value is passed from another jotform (b#1231139)
                 // Don't strip plus sign if the input is email (#1416809)
-                if (document.referrer.match(/jotform/) || input.getAttribute('type') === 'email') {
+                // do not strip plus signs if the input is textarea, textbox or address (#2168454)
+                if (document.referrer.match(/jotform/) || input.getAttribute('type') === 'email' || (formLine && (dontStripPlusIn.indexOf(formLine.readAttribute('data-type')) > -1))) {
                     input.value = pair.value;
                 }
                 JotForm.defaultValues[input.id] = input.value;
                 try{
-                    var formLine = input.up('.form-line');
                     if (formLine && formLine.readAttribute('data-type') == "control_datetime") {
                         var year = formLine.down('input[id*="year_"]').value;
                         var month = formLine.down('input[id*="month_"]').value;
@@ -3226,6 +3455,11 @@ var JotForm = {
      * it will add a function named editModeFunction to global scope
      */
     editMode: function (data, noreset, skipField, skipCardIndex) {
+        if (this.isNewSaveAndContinueLaterActive && this.isEditMode()) {
+            $$('.js-new-sacl-button').forEach(function (saveBtn) {
+                saveBtn.hide();
+            });
+        }
         var preLink = "";
         if (!JotForm.debug) {
             if (this.url.search("https") == -1) {
@@ -3258,10 +3492,9 @@ var JotForm = {
      */
     isEditMode: function () {
         if (window.FORM_MODE === 'cardform') {
-            return (typeof window.editModeFunction !== 'undefined') && CardForm.layoutParams.isEditMode;
+            return CardForm.layoutParams.isEditMode;
         }
-        return (typeof window.editModeFunction !== 'undefined') ||
-          window.location.pathname.match(/^\/edit\//) ||
+        return window.location.pathname.match(/^\/edit\//) ||
           window.location.pathname.match(/^\/\/edit/) ||
           window.location.href.match(/mode=inlineEdit/) ||
           window.location.href.match(/mode=submissionToPDF/);
@@ -3366,7 +3599,7 @@ var JotForm = {
                                   insertAsText: "1",
                                   isLabel: question.type === "control_text" ? "" : "1",
                                   newCalculationType: "1",
-                                  operands: qname,
+                                  operands: (multilineFieldEquation || qname),
                                   readOnly: "",
                                   replaceText: question_name,
                                   resultField: question.qid,
@@ -3545,6 +3778,31 @@ var JotForm = {
         return elemShown;
     },
 
+    collectStylesheet: function () {
+        var styles = $$('style, link');
+        var styleTags = [];
+
+        styles.forEach(function (style) {
+            if (style.type === 'text/css' || style.rel === 'stylesheet') {
+                styleTags.push(style.outerHTML);
+            }
+        });
+
+        return styleTags;
+    },
+
+    handleWidgetStyles: function () {
+        var team = getQuerystring('team')
+
+        if (team === 'marvel' || team === 'muse') {
+            var styleTags = JotForm.collectStylesheet();
+            $$('[data-type=control_widget] iframe').forEach(function (frame) {
+                frame.addEventListener("load", function() {
+                    frame.contentWindow.postMessage({ cmd: 'injectStyle', styleTags: styleTags }, '*');
+                });
+            });
+        }
+    },
 
     showWidget: function (id) {
         var referrer = document.getElementById("customFieldFrame_" + id) ? document.getElementById("customFieldFrame_" + id).src : false;
@@ -3655,6 +3913,7 @@ var JotForm = {
             if (JotForm.clearFieldOnHide == "enable" && !dontClear && !JotForm.ignoreInsertionCondition) {
                 try {
                     JotForm.clearField(field);
+                    JotForm.runConditionForId(field);
                 } catch (e) {
                     console.log(e);
                 }
@@ -3810,7 +4069,7 @@ var JotForm = {
                         input.checked = false;
                     }
                 });
-                if ($('id_' + field).triggerEvent && !dontTrigger) $('id_' + field).triggerEvent('click');
+                if ($('id_' + field).triggerEvent && !dontTrigger) $('id_' + field).triggerEvent('change');
             } else if (type == "select") {
                 if ($('input_' + field)) {
                     $('input_' + field).value = defaultValue;
@@ -4422,11 +4681,20 @@ var JotForm = {
                             } else {
                                 all = false;
                             }
-                        } else {
+                        } else if (['isEmpty', 'isFilled'].include(term.operator)) {
                             filled = $$('#id_' + term.field + ' select').collect(function (e) {
                                 return e.value;
                             }).any();
                             if (JotForm.checkValueByOperator(term.operator, term.value, filled)) {
+                                any = true;
+                            } else {
+                                all = false;
+                            }
+                        } else {
+                            value = $$('#id_' + term.field + ' select').collect(function (e) {
+                                return e.value;
+                            });
+                            if (JotForm.checkValueByOperator(term.operator, term.value, value)) {
                                 any = true;
                             } else {
                                 all = false;
@@ -4562,23 +4830,71 @@ var JotForm = {
                         } else {
                           tempInput = 'input_' + term.field;
                         }
-
                         if(!$(tempInput)) {
                             return;
                         }
 
-                        value = $(tempInput).value;
-                        if ($(tempInput).hinted) {
-                            value = "";
-                        }
-                        if (value === undefined) {
-                            return;
-                            /* continue; */
-                        }
-                        if (JotForm.checkValueByOperator(term.operator, term.value, value, term.field)) {
-                            any = true;
+                        if ($(tempInput) && $(tempInput).multiple) {
+                            if (term.operator == 'equals') {
+                                var option = $(tempInput).select('option[value=' + term.value + ']');
+                                if (option.length > 0 && option[0].selected) {
+                                    any = true;
+                                } else {
+                                    all = false;
+                                }
+                            } else if (term.operator == 'notEquals') {
+                                var option = $(tempInput).select('option[value=' + term.value + ']');
+                                if (option.length > 0 && !option[0].selected) {
+                                    any = true;
+                                } else {
+                                    all = false;
+                                }
+                            } else if (['isEmpty', 'isFilled'].include(term.operator)) {
+                                var selected = false;
+                                var arr = $(tempInput).options;
+                                for (var i = 0; i < arr.length; i++) {
+                                    if (!arr[i].value.empty() && arr[i].selected == true) {
+                                        selected = true;
+                                    }
+                                }
+                                if (term.operator == 'isEmpty') {
+                                    if (!selected) any = true;
+                                    else all = false;
+                                }
+                                if (term.operator == 'isFilled') {
+                                    if (selected) any = true;
+                                    else all = false;
+                                }
+                            }
+                        } else if ($(tempInput)) {
+                            value = $(tempInput).value;
+                            if (value === undefined) {
+                                return;
+                                /* continue; */
+                            }
+                            if (JotForm.checkValueByOperator(term.operator, term.value, value, term.field)) {
+                                any = true;
+                            } else {
+                                all = false;
+                            }
+                        } else if (['isEmpty', 'isFilled'].include(term.operator)) {
+                            filled = $$('#id_' + term.field + ' select').collect(function (e) {
+                                return e.value;
+                            }).any();
+                            if (JotForm.checkValueByOperator(term.operator, term.value, filled, term.field)) {
+                                any = true;
+                            } else {
+                                all = false;
+                            }
                         } else {
-                            all = false;
+                            value = $$('#id_' + term.field + ' select').collect(function (e) {
+                                return e.value;
+                            });
+                            if (JotForm.checkValueByOperator(term.operator, term.value, value, term.field)) {
+                                any = true;
+                            } else {
+                                all = false;
+                            }
                         }
                 }
 
@@ -4885,7 +5201,7 @@ var JotForm = {
                       var next = sections.find(function(section) { return section.id === 'id_' + action.skipTo;});
                       if (next) {
                         JotForm.nextPage = sections.find(function(section) { return section.id === 'id_' + action.skipTo;});
-                        JotForm.prevPage = sections.find(function(section) { return section.className.indexOf('form-line-active') > -1;});
+                        JotForm.prevPage = sections.find(function(section) { return section.firstChild && section.firstChild.classList.contains('isVisible');});
                       }
                     } catch (error) {
                       console.log(error);
@@ -4989,7 +5305,8 @@ var JotForm = {
                 || $A(['prefix', 'middle', 'suffix', 'addr_line2']).any(function (name) {
                     return el.name.indexOf("[" + name + "]") > -1;
                 })
-                || el.hasClassName('jfDropdown-search')) {
+                || el.hasClassName('jfDropdown-search')
+                || el.hasClassName('jfRating-shortcut-input')) {
                 return;
             }
 
@@ -5180,10 +5497,12 @@ var JotForm = {
 
                 switch (type) {
                     case "mixed":
-                        setCalculationListener($(mixedOpField), 'change', calc, index);
-                        setCalculationListener($(mixedOpField), 'blur', calc, index);
-                        setCalculationListener($(mixedOpField), 'keyup', calc, index);
-                        setCalculationListener($(mixedOpField), 'paste', calc, index);
+                        if ($(mixedOpField)) {
+                            setCalculationListener($(mixedOpField), 'change', calc, index);
+                            setCalculationListener($(mixedOpField), 'blur', calc, index);
+                            setCalculationListener($(mixedOpField), 'keyup', calc, index);
+                            setCalculationListener($(mixedOpField), 'paste', calc, index);
+                        }
                         break;
 
                     case "widget":
@@ -5193,7 +5512,7 @@ var JotForm = {
 
                     case 'radio':
                     case 'checkbox':
-                        setCalculationListener($('id_' + opField), 'click', calc);
+                        setCalculationListener($('id_' + opField), 'change', calc);
                         if ($('input_' + opField)) {
                             setCalculationListener($('id_' + opField), 'keyup', calc);
                         }
@@ -5242,6 +5561,9 @@ var JotForm = {
                         setCalculationListener($('id_' + opField), 'blur', calc, index);
                         setCalculationListener($('id_' + opField), 'keyup', calc, index);
                         setCalculationListener($('id_' + opField), 'paste', calc, index);
+                        if(window.FORM_MODE === 'cardform' && $('id_' + opField).querySelector(".jfQuestion-fullscreen") && !$('id_' + opField).querySelector(".jfQuestion-fullscreen").hasClassName("isHidden")) {
+                           setCalculationListener($('id_' + opField), 'click', calc, index);
+                        }
                         break;
                 }
             }
@@ -5268,6 +5590,7 @@ var JotForm = {
          'control_paypal',
          'control_paypalexpress',
          'control_paypalpro',
+         'control_paypalcomplete',
          'control_clickbank',
          'control_2co',
          'control_googleco',
@@ -5328,7 +5651,7 @@ var JotForm = {
                 'text', 'email', 'textarea', 'calculation', 'combined', 'address', 'datetime', 'time', 'html', 'authnet', 'paypalpro', 'number', 'radio', 'checkbox',
                 'select', 'matrix', 'widget', 'signature', 'braintree', 'stripe', 'square', 'eway', 'bluepay', 'firstdata', 'chargify', 'echeck', 'payu', 'pagseguro', 'moneris', 'paypal',
                 'dwolla', 'bluesnap', 'paymentwall', 'payment', 'paypalexpress', 'payjunction', '2co', 'cardconnect', 'clickbank', 'onebip', 'worldpay', 'rating', 'hidden',
-                'file', 'other', 'mixed', 'sofort', 'payoneer', 'paysafe', 'gocardless', 'stripeACH', 'paypalSPB', 'cybersource'
+                'file', 'other', 'mixed', 'sofort', 'payoneer', 'paysafe', 'gocardless', 'stripeACH', 'paypalSPB', 'cybersource', "paypalcomplete"
                 ].include(JotForm.calculationType(result))) return;
         } catch (e) {
             console.log(e);
@@ -5436,6 +5759,7 @@ var JotForm = {
                 case 'paypalexpress':
                 case 'paypalSPB':
                 case 'paypalpro':
+                case 'paypalcomplete':
                 case 'payu':
                 case 'square':
                 case 'sofort':
@@ -5614,7 +5938,7 @@ var JotForm = {
                                 }
                                 mins = valArr[4];
                             }
-                            var millis = Date.UTC(valArr[2], valArr[0] - 1, valArr[1], hours, mins);
+                            var millis = new Date(valArr[2], valArr[0] - 1, valArr[1], hours, mins).getTime();
                             val = millis / 60 / 60 / 24 / 1000;
                         } else {
                             val = 0;
@@ -6017,16 +6341,16 @@ var JotForm = {
                                 var millis = args[0] * 24 * 60 * 60 * 1000 + 30000;
                                 var date = new Date(millis);
 
-                                var getUTCStringDate = function(date) {
-                                    var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                                var getStringDate = function(date) {
+                                var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                                     var dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-                                    var day = dayNames[date.getUTCDay()];
-                                    var month = monthNames[date.getUTCMonth()];
-                                    var dayOfMonth = JotForm.addZeros(date.getUTCDate(), 2);
-                                    var year = date.getUTCFullYear();
+                                    var day = dayNames[date.getDay()];
+                                    var month = monthNames[date.getMonth()];
+                                    var dayOfMonth = JotForm.addZeros(date.getDate(), 2);
+                                    var year = date.getFullYear();
                                     return day+" "+month+" "+dayOfMonth+" "+year;
                                 };
-                                out += getUTCStringDate(date);
+                                out += getStringDate(date);
 
                                 if (equation.charAt(i) === ']') {
                                     i++;
@@ -6142,14 +6466,36 @@ var JotForm = {
                     var re = new RegExp("\{" + replaceRegex + "\}", "g");
                     var def = calc.defaultValue || "";
 
+                    var links = $$('a[href="{'+replaceRegex+'}"]');
+                    var replaceLinks = $$('a[replace-link="'+className+'"]');
+                    var linkRegex = new RegExp(/([--:\w?@%&+~#=]*\.[a-z]{2,4}\/{0,2})((?:[?&](?:\w+)=(?:\w+))+|[--:\w?@%&+~#=]+)?/);
+                    var matchLink = output.match(linkRegex);
+                    links.each(function (link) {
+                        link.setAttribute('replace-link', className)
+                        if (matchLink) {
+                            var url = matchLink[0].indexOf('//') === -1 ? '//' + matchLink[0] : matchLink[0];
+                            link.setAttribute('href', url);
+                        }
+                    });
+                    replaceLinks.each(function (link) {
+                        if (matchLink) {
+                            var url = matchLink[0].indexOf('//') === -1 ? '//' + matchLink[0] : matchLink[0]
+                            link.setAttribute('href', url);
+                        }
+                    })
 
                     if (spans.length == 0) {
-                        var contents = calc.isLabel ? $('label_' + result).innerHTML :  $('text_' + result).innerHTML;
-                        contents = contents.replace(re, '<span class="replaceTag ' + className + '" default="'+def+'">' + output + '</span>');
+                        var contents = calc.isLabel ? $('label_' + result).innerHTML : $('text_' + result).innerHTML;
+                        if (calc.isLabel) {
+                            contents = contents.replace(re, '<span class="replaceTag ' + className + '" default="'+def+'">' + output + '</span>');
+                        } else {
+                            var localRe = new RegExp("(>[^<>]*)\{" + replaceRegex + "\}([^<>]*<)", "g");
+                            contents = contents.replace(localRe, '$1<span class="replaceTag ' + className + '" default="'+def+'">' + output + '</span>$2');
+                        }
                         calc.isLabel ? $('label_' + result).update(contents) : $('text_' + result).update(contents);
                     } else {
                         spans.each(function (span) {
-                            span.update(output);
+                            span.update(output.stripScripts().stripEvents());
                         });
                     }
 
@@ -6181,9 +6527,13 @@ var JotForm = {
                for (var inputId in combinedObject) {
                     if (inputId !== "") {
                         if ($('id_' + result).select('input[id*=' + inputId + '], select[id*=' + inputId + ']').length > 0) {
-                            $('id_' + result).select('input[id*=' + inputId + '], select[id*=' + inputId + ']').first().value = combinedObject[inputId];
+                            var fieldInputElement = $('id_' + result).select('input[id*=' + inputId + '], select[id*=' + inputId + ']').first()
+                            fieldInputElement.value = combinedObject[inputId];
+                            if(resultFieldType == 'address' &&  window.FORM_MODE == 'cardform'){
+                              fieldInputElement.parentElement.querySelector('input').value = combinedObject[inputId]; 
+                            }
                             if (combinedObject[inputId]) {
-                                $('id_' + result).select('input[id*=' + inputId + '], select[id*=' + inputId + ']').first().parentNode.addClassName('isFilled');
+                              fieldInputElement.parentNode.addClassName('isFilled');
                             }
                         }
                     }
@@ -6382,7 +6732,7 @@ var JotForm = {
         var eventType;
 
         if (resultFieldType == "checkbox" || resultFieldType == "radio") {
-            eventType = "click";
+            eventType = "change";
             triggerMe = $('id_' + result)
         } else if (resultFieldType == "select") {
             eventType = "change";
@@ -6395,7 +6745,13 @@ var JotForm = {
                     triggerMe = $('input_' + result);
                 }
             }
-        } else {
+        } else if(resultFieldType == "mixed") {
+            eventType = "change";
+            if(result.indexOf('|') > 0){
+                triggerMe = $('input_' + result.split('|').join('_field_'));
+            }
+        }
+        else {
             eventType = "keyup";
             if($(mixedResult)) {
                 triggerMe = $(mixedResult);
@@ -6545,7 +6901,7 @@ var JotForm = {
                                 break;
                             case "checkbox":
                             case "radio":
-                                JotForm.setFieldConditions('id_' + id, 'click', condition);
+                                JotForm.setFieldConditions('id_' + id, 'change', condition);
                                 break;
                             case "number":
                                 JotForm.setFieldConditions('input_' + id, 'number', condition);
@@ -6570,7 +6926,6 @@ var JotForm = {
                                 if (id.indexOf('_field_') > -1) {
                                     var idSplit = id.split('_field_');
                                     var tempQid = idSplit[0];
-
                                     var tempQuestion;
                                     // If we can
                                     this.CardLayout.layoutParams.allQuestions.forEach(function (question) {
@@ -6578,7 +6933,6 @@ var JotForm = {
                                           tempQuestion = question;
                                         }
                                     });
-
                                     if (tempQuestion && tempQuestion.fields) {
                                         tempQuestion.fields.forEach( function (field) {
                                         var tempSelector = 'input_' + tempQid + '_field_' + field.fieldID;
@@ -6958,6 +7312,15 @@ var JotForm = {
     },
 
     /**
+     * New Product UI
+     * Will be removed after requirement completed
+     */
+    isComparePaymentFormV1: function() {
+        var queryParameters = window.location.search.substring(1);
+        return queryParameters === "comparePaymentForm=v1" ? true : false;
+    },
+
+    /**
      * Checks whether form should process a payment
      * @returns {Boolean}
      */
@@ -7322,6 +7685,20 @@ var JotForm = {
         };
     },
 
+    handlePaymentSubProductsV1: function () {
+      $$('.form-product-has-subproducts').each(function (sp) {
+          sp.observe('click', function () {
+              if (sp.checked) {
+                  sp.up(".form-product-item").classList.remove('sub_product');
+                  sp.up(".form-product-item").classList.add('show_sub_product');
+              } else {
+                  sp.up(".form-product-item").classList.remove('show_sub_product');
+                  sp.up(".form-product-item").classList.add('sub_product');
+              }
+          });
+      });
+    },
+
     /**
      * handles toggling of lightbox for product images
      */
@@ -7401,6 +7778,7 @@ var JotForm = {
         var products = 0;
 
         var pricingInformations = [];     // This variable holds each item informations
+        var noCostItems = [];
         $H(prices).each(function (pair) {
 
             var parsedPair = pair.key.split("_");
@@ -7493,7 +7871,8 @@ var JotForm = {
                     if ($(pair.value.quantityField) && $(pair.value.quantityField).up("tr")) {
                         item = $(pair.value.quantityField).up("tr").querySelector("th").textContent.trim();
                     } else {
-                        item = document.querySelector('label[for=' + pair.value.specialPriceField + ']').textContent.trim();
+                        var specialPriceLabel = document.querySelector('label[for=' + pair.value.specialPriceField + ']');
+                        item = specialPriceLabel && specialPriceLabel.textContent.trim();
                     }
 
                     if (item) {
@@ -7721,7 +8100,7 @@ var JotForm = {
                 selected_product_id = $(pair.key).value;
                 JotForm.checkCouponAppliedProducts();
               };
-              if ($(pair.key).checked && price > 0) {
+              if ($(pair.key).checked) {
                 var amount = isSpecialPricing ? priceWithoutDiscount : parseFloat(pair.value.price);
                 var description = "";
 
@@ -7731,13 +8110,26 @@ var JotForm = {
                   });
                 }
 
-                pricingInformations.push({
-                  name: itemName,
-                  unit_amount: Number(amount),
-                  quantity: isSpecialPricing ? 1 : quantity,
-                  description: description.substr(0, 124),
-                  isSetupfee: isSetupFee
-                });
+                if(price > 0) {
+                    pricingInformations.push({
+                        name: itemName,
+                        unit_amount: Number(amount),
+                        quantity: isSpecialPricing ? 1 : quantity,
+                        description: description.substr(0, 124),
+                        isSetupfee: isSetupFee
+                    });
+                }
+                //If product price has been discounted to zero by a coupon
+                //Restricted to paypalSPB only for now to avoid any unforseen errors
+                else if(JotForm.payment === "paypalSPB" && !isNaN(quantity) && quantity > 0) {
+                    noCostItems.push({
+                        name: itemName,
+                        unit_amount: Number(amount),
+                        quantity: isSpecialPricing ? 1 : quantity,
+                        description: description.substr(0, 124),
+                        isSetupfee: isSetupFee
+                    });
+                }
               }
           }
         });
@@ -7842,6 +8234,7 @@ var JotForm = {
 
         JotForm.pricingInformations = {
             items: pricingInformations,
+            noCostItems: noCostItems,
             general: {
                 net_amount: total,
                 total_amount: totalWithoutDiscount,
@@ -8205,8 +8598,11 @@ var JotForm = {
             oldPrices[id] = new Element('span');
             var span = new Element('span', {style: 'text-decoration:line-through; display:inline-block;'});
             span.insert(container.innerHTML.replace("price", "price_old"));
+            var spanHidden = new Element('span', {style: 'width:0; height:0; opacity: 0; position:absolute;'})
+            spanHidden.innerHTML = "Discount Price"
             oldPrices[id].insert({top: '&nbsp'});
             oldPrices[id].insert(span);
+            oldPrices[id].insert(spanHidden);
             oldPrices[id].insert({bottom: '&nbsp'});
             container.insert({top: oldPrices[id]});
         }
@@ -8331,66 +8727,41 @@ var JotForm = {
                 return;
             }
 
-            var isInSession = !!localStorage.getItem('_stripeVariation_' + form.id) ? true : false;
-            var session = isInSession ? localStorage.getItem('_stripeVariation_' + form.id) : false;
-
-            var $this = this;
-            new Ajax.Jsonp(JotForm.server, {
-                parameters: {
-                    action: 'scaABTest',
-                    formId: form.id,
-                    gateway: 'STRIPE',
-                    firstVariation: !!!isInSession && '0',
-                    isInSession: isInSession
-                },
-                evalJSON: 'force',
-                onComplete: function(t) {
-                    var variations = session || t.responseJSON.variations;
-
-                    if (form.id === "81718692518871" || form.id === "81718911718867") {
-                        variations = "0";
+            var scriptVersion = (scaTemplate && scaTemplate.querySelector('.cc_numberMount')) ? "v3" : "v1";
+            this.loadScript('https://js.stripe.com/' + scriptVersion + '/', function() {
+                if (typeof _StripeSCAValidation || typeof _StripeValidation) {
+                    if (scaTemplate && scaTemplate.querySelector('.cc_numberMount')) {
+                        var stripeV = new _StripeSCAValidation();
+                        JotForm.stripe = stripeV;
+    
+                        if (oldTemplate) { oldTemplate.remove(); }
+    
+                        stripeV.setFields(add_qid, shipping_qid, email_qid, phone_qid, custom_field_qid);
+                        stripeV.init(pubkey);
+                        console.log('Stripe SCA loaded');
+                    } else {
+                        var stripeV = new _StripeValidation();
+                        JotForm.stripe = stripeV;
+    
+                        if (scaTemplate) { scaTemplate.remove(); }
+    
+                        Stripe.setPublishableKey(clean_pubkey);
+                        stripeV.setAddress_qid(add_qid);
+                        stripeV.init();
+                        console.log('Stripe v1 loaded');
                     }
-
-                    var scriptVersion = (variations == 1 && scaTemplate) ? 'v3' : 'v1';
-
-                    $this.loadScript('https://js.stripe.com/' + scriptVersion + '/', function () {
-                        console.log("Stripe Loaded:", scriptVersion);
-
-                        if (variations == "1" && scaTemplate) { // StripeSCA.js
-                            var stripeV = new _StripeSCAValidation();
-                            JotForm.stripe = stripeV;
-
-                            if (oldTemplate) {
-                                oldTemplate.remove();
-                            }
-
-                            stripeV.setFields(add_qid, shipping_qid, email_qid, phone_qid, custom_field_qid);
-                            stripeV.init(pubkey);
-                            console.log('Stripe SCA loaded');
-                        } else { // Stripe v1
-                            var stripeV = new _StripeValidation();
-                            JotForm.stripe = stripeV;
-
-                            if (scaTemplate) {
-                                scaTemplate.remove();
-                            }
-
-                            Stripe.setPublishableKey(clean_pubkey);
-                            stripeV.setAddress_qid(add_qid);
-                            stripeV.init();
-                            console.log('Stripe v1 loaded');
-                        }
-                    });
-
-                    if (!isInSession) {
-                        localStorage.setItem('_stripeVariation_' + form.id, variations );
+                } else {
+                    if (scaTemplate) { scaTemplate.remove(); }
+        
+                    if (oldTemplate) {
+                        $$('.stripe-old-template input').forEach(function(input) {
+                            input.setAttribute('disabled', true);
+                        })
                     }
                 }
             });
         } else { // That's mean the user doesn't connected..
-            if (scaTemplate) {
-                scaTemplate.remove();
-            }
+            if (scaTemplate) { scaTemplate.remove(); }
 
             if (oldTemplate) {
                 $$('.stripe-old-template input').forEach(function(input) {
@@ -9133,6 +9504,98 @@ var JotForm = {
         });
     },
 
+    /**
+     * init time input events for timev2 (time & datetime fields)
+     */
+    initTimev2Inputs: function () {
+        var inputs = document.querySelectorAll('input[id*="timeInput"][data-version="v2"]');
+
+        for (var i = 0; i < inputs.length; i++) {
+            var imask = new Inputmask({
+                alias: 'datetime',
+                inputFormat: inputs[i].dataset.mask ? inputs[i].dataset.mask : 'hh:MM',
+                jitMasking: true,
+                oncomplete: function (e) {
+                    var values = e.target.value.split(':');
+                    var hh = e.target.parentElement.querySelector('input[id*="hourSelect"]');
+                    var mm = e.target.parentElement.querySelector('input[id*="minuteSelect"]');
+                    hh.value = values[0];
+                    mm.value = values[1];
+                },
+                onincomplete: function (e) {
+                    var values = e.target.value.split(':');
+                    var hh = e.target.parentElement.querySelector('input[id*="hourSelect"]');
+                    hh.value = values[0];
+                    if (!!values[1]) {
+                        var mm = e.target.parentElement.querySelector('input[id*="minuteSelect"]');
+                        mm.value = values[1].length === 2 ? values[1] : values[1] + '0';
+                    }
+                },
+                oncleared: function (e) {
+                    var hh = e.target.parentElement.querySelector('input[id*="hourSelect"]');
+                    var mm = e.target.parentElement.querySelector('input[id*="minuteSelect"]');
+                    hh.value = '';
+                    mm.value = '';
+                }
+            });
+            imask.mask(inputs[i]);
+            // fix for placeholder on mouse enter
+            inputs[i].addEventListener('mouseenter', function (e) {
+                e.target.placeholder = 'HH : MM';
+            });
+        }
+    },
+
+    /**
+     * init other inputs for default theme v2 (checkbox & radio fields)
+     */
+    initOtherV2Options: function () {
+        // reset other inputs for v2 events
+        var otherInputs = document.querySelectorAll('.form-checkbox-other-input, .form-radio-other-input');
+        for (var i = 0; i < otherInputs.length; i++) {
+            var oldEl = otherInputs[i];
+            var newEl = oldEl.cloneNode(true);
+            oldEl.parentNode.replaceChild(newEl, oldEl);
+            newEl.placeholder = newEl.dataset.placeholder;
+        }
+        // handle checkboxes' other change
+        var checkboxOtherOptions = document.querySelectorAll('li.form-line[data-type="control_checkbox"] input[type="checkbox"]');
+        for (var i = 0; i < checkboxOtherOptions.length; i++) {
+            checkboxOtherOptions[i].addEventListener('change', function (e) {
+                if (e.target.value !== 'other') {
+                    return; // if selected one is not 'other' option then exit
+                }
+                var otherContainerID = e.target.id + '_input';
+                var otherContainer = document.getElementById(otherContainerID);
+                var otherInputID = e.target.id.replace('other', 'input');
+                var otherInput = document.getElementById(otherInputID);
+                if (e.target.checked) {
+                    otherContainer.style.display = 'block';
+                    otherInput.focus();
+                } else {
+                    otherContainer.style.display = 'none';
+                    otherInput.value = '';
+                }
+            });
+        }
+        // handle radios' other change
+        var radioOtherOptions = document.querySelectorAll('li.form-line[data-type="control_radio"] input[type="radio"]');
+        for (var i = 0; i < radioOtherOptions.length; i++) {
+            radioOtherOptions[i].addEventListener('change', function (e) {
+                var otherContainerID = e.target.up('li.form-line').id.replace('id', 'other') + '_input';
+                var otherContainer = document.getElementById(otherContainerID);
+                var otherInputID = e.target.up('li.form-line').id.replace('id', 'input');
+                var otherInput = document.getElementById(otherInputID);
+                if (e.target.value === 'other') {
+                    otherContainer.style.display = 'block';
+                    otherInput.focus();
+                } else if (e.target.value !== 'other' && e.target.checked) {
+                    otherContainer.style.display = 'none';
+                    otherInput.value = '';
+                }
+            });
+        }
+    },
 
     /**
      * Handles the functionality of control_number tool
@@ -9361,7 +9824,11 @@ var JotForm = {
 
                     JotForm.nextPage = false;
                     if (JotForm.saveForm) {
-                        JotForm.hiddenSubmit(JotForm.getForm(section));
+                        if (window.JFFormUserHelper && window.JFFormUserHelper.SCLManager) {
+                            window.JFFormUserHelper.SCLManager.hiddenSubmit();
+                        } else {
+                            JotForm.hiddenSubmit(JotForm.getForm(section));
+                        }
                     }
 
                     JotForm.iframeHeightCaller();
@@ -9379,8 +9846,13 @@ var JotForm = {
 
                 } else {
                     try {
+                        JotForm.updateErrorNavigation(true);
                         $$('.form-button-error').invoke('remove');
                         $$('.form-pagebreak-next').each(function (nextButton) {
+                            if (JotForm.isSourceTeam) {
+                                return;
+                            }
+
                             var errorBox = new Element('div', {className: 'form-button-error'});
                             errorBox.insert(JotForm.texts.generalPageError);
                             $(nextButton.parentNode.parentNode).insert(errorBox);
@@ -9424,7 +9896,11 @@ var JotForm = {
                 JotForm.enableDisableButtonsInMultiForms();
 
                 if (JotForm.saveForm) {
-                    JotForm.hiddenSubmit(JotForm.getForm(section));
+                    if (window.JFFormUserHelper && window.JFFormUserHelper.SCLManager) {
+                        window.JFFormUserHelper.SCLManager.hiddenSubmit();
+                    } else {
+                        JotForm.hiddenSubmit(JotForm.getForm(section));
+                    }
                 }
                 //clear if there is an error bar near back-next buttons
                 $$('.form-button-error').invoke('remove');
@@ -9451,16 +9927,42 @@ var JotForm = {
                 last.pagesIndex = allSections.length;
                 pages.push(last); // add it with the other pages
                 last.hide(); // hide it until we open it
-                var li = new Element('li', {
-                    className: 'form-input-wide'
-                });
-                var cont = new Element('div', {
-                    className: 'form-pagebreak'
-                });
-                var backCont = new Element('div', {
-                    className: 'form-pagebreak-back-container'
-                });
+
+                var mergeWithSubmit = false;
+                var targetSubmit = null;
+                if (JotForm.newDefaultTheme) {
+                    var submitButtons = last.querySelectorAll('li[data-type="control_button"] .form-buttons-wrapper');
+                    if (submitButtons.length > 0) {
+                        mergeWithSubmit = true;
+                        targetSubmit = submitButtons[(submitButtons.length - 1)];
+                    }
+                }
+
+                var backCont = new Element('div', { className: 'form-pagebreak-back-container' });
                 var back = $$('.form-pagebreak-back-container')[0].select('button')[0];
+                backCont.insert(back);
+
+                if (mergeWithSubmit) {
+                    targetSubmit.insert({ top: backCont });
+                    // reorder buttons
+                    var buttonOrder = ['.form-pagebreak-back-container', '.form-submit-preview', '.form-submit-print', '.form-submit-reset', '.paypal-submit-button-wrapper', '.form-sacl-button', '.form-submit-button[type="submit"]', '.form-pagebreak-next-container'];
+                    var children = targetSubmit.childElements();
+                    targetSubmit.innerHTML = '';
+
+                    buttonOrder.forEach(function(btn) {
+                        children.forEach(function(child) {
+                            if (new Selector(btn).match(child)) {
+                                targetSubmit.insert({ bottom: child });
+                            }
+                        });
+                    });
+                } else {
+                    var li = new Element('li', { className: 'form-input-wide' });
+                    var cont = new Element('div', { className: 'form-pagebreak' });
+                    cont.insert(backCont);
+                    li.insert(cont);
+                    last.insert(li);
+                }
 
                 back.observe('click', function () {
                     if (JotForm.saving) {
@@ -9469,11 +9971,6 @@ var JotForm = {
                     last.hide();
                     JotForm.nextPage = false;
                 });
-
-                backCont.insert(back);
-                cont.insert(backCont);
-                li.insert(cont);
-                last.insert(li);
             }
         }
     },
@@ -9494,11 +9991,11 @@ var JotForm = {
         JotForm.runAllCalculations(true); //so newly hidden fields may be excluded
     },
     /**
-     * Hide the form section wihtout "display: none" otherwise iframes are not loaded properly
+     * Hide the form section
      */
     hideFormSection: function (section) {
         section.addClassName('js-non-displayed-page');
-        section.style.display = '';
+        section.style.display = 'none';
         section.style.position = 'absolute';
         section.style.top = '-9999px';
         section.style.left = '-9999px';
@@ -9513,6 +10010,17 @@ var JotForm = {
         section.style.position = '';
         section.style.top = '';
         section.style.left = '';
+        // focus on first element on new page
+        var firstLabel = section.querySelector('label');
+        if (firstLabel) {
+            var inputElementID = firstLabel.getAttribute('for');
+            if (inputElementID){
+                var inputElement = document.getElementById(inputElementID);
+                if (inputElement) {
+                    inputElement.focus();
+                }
+            }
+        }
         return section;
     },
     /**
@@ -9710,6 +10218,27 @@ var JotForm = {
             }
           });
     },
+    handleSignatureEvents: function() {
+        function handleCanavasMousedDown(wrapperElem) {
+            wrapperElem.removeClassName('signature-placeholder');
+            this.removeEventListener('mousedown', handleCanavasMousedDown);
+        }
+        var signatureElems = document.querySelectorAll('.jotform-form .signature-pad-wrapper');
+
+        if(signatureElems && signatureElems.length > 0) {
+            signatureElems.forEach(function(signatureElem) {
+                var canvasElem = signatureElem.querySelector('canvas');
+                var wrapperElem = signatureElem.querySelector('.signature-line.signature-wrapper');
+                var clearButton = signatureElem.querySelector('.clear-pad-btn.clear-pad');
+                canvasElem.addEventListener('mousedown', handleCanavasMousedDown.bind(this, wrapperElem));
+
+                clearButton.addEventListener('click', function() {
+                    wrapperElem.addClassName('signature-placeholder');
+                    canvasElem.addEventListener('mousedown', handleCanavasMousedDown.bind(this, wrapperElem));
+                });
+            });
+        }
+    },
     /**
      *  Handles Paypal Pro payment methods
      *  and field validations
@@ -9872,6 +10401,41 @@ var JotForm = {
         }
     },
 
+    handlePaypalComplete: function() {
+        if (JotForm.isEditMode() || document.get.sid) {
+            return;
+        }
+
+        try {
+            var paypalComplete = new _paypalCompleteJS();
+            paypalComplete.initialization();
+        } catch (err) {
+            console.log("ERR::", err);
+            // TODO: Send text review.
+            JotForm.errored($$('li[data-type="control_paypalcomplete"]')[0], err);
+
+            if ($$('li[data-type="control_paypalcomplete"]')[0]) {
+                $$('li[data-type="control_paypalcomplete"] .form-textbox').each(function(q) {
+                    q.disabled = true;
+                });
+            }
+        }
+    },
+
+    handleCybersource: function () {
+      // skip on edit mode
+      if (window.location.pathname.match(/^\/edit/) || (["edit", "inlineEdit", "submissionToPDF"].indexOf(document.get.mode) > -1 && document.get.sid)) {
+        return;
+      }
+      if (typeof __cybersource !== "function") {
+        alert("PagSeguro payment script didn't work properly. Form will be reloaded");
+        location.reload();
+        return;
+      }
+      JotForm.cybersource = __cybersource();
+      JotForm.cybersource.init();
+    },
+
     /**
      * Creates description boxes next to input boxes
      * @param {Object} input
@@ -10007,7 +10571,6 @@ var JotForm = {
                 console.log.apply(console, arguments);
             }
         }
-
         if (getQuerystring('qp') !== "") {
             return true;
         }
@@ -10124,6 +10687,12 @@ var JotForm = {
                 _log('ret setted ' + ret);
             }
         });
+
+        if (JotForm.isHermesTeam && JotForm.handleHermesFormErrors && !ret) {
+            JotForm.handleHermesFormErrors();
+            return;
+        }
+
         _log('final ret value ' + ret);
         return ret;
     },
@@ -10189,6 +10758,7 @@ var JotForm = {
             new Element('div', {className: 'form-error-arrow'}).insert(new Element('div', {className: 'form-error-arrow-inner'}))));
 
         JotForm.iframeHeightCaller();
+        JotForm.updateErrorNavigation();
 
         return false;
     },
@@ -10230,6 +10800,7 @@ var JotForm = {
         }, 100);
 
         JotForm.iframeHeightCaller();
+        JotForm.updateErrorNavigation();
 
         return true;
     },
@@ -10264,7 +10835,13 @@ var JotForm = {
         this.hideButtonMessage();
 
         $$('.form-submit-button').each(function (button) {
-            var errorBox = new Element('div', {className: 'form-button-error'});
+            if (JotForm.isSourceTeam) {
+                return;
+            }
+            var errorBox = new Element('div', {
+                className: 'form-button-error',
+                role: 'alert'
+            });
 
             errorBox.insert('<p>' + (typeof txt !== "undefined" ? txt : JotForm.texts.generalError) + '</p>');
 
@@ -10292,6 +10869,22 @@ var JotForm = {
               }
             }
         });
+    },
+
+    _errTimeout: null,
+    updateErrorNavigation: function(render) {
+        if (typeof window.ErrorNavigation === 'undefined') {
+            return;
+        }
+
+        if (JotForm._errTimeout) {
+            clearTimeout(JotForm._errTimeout);
+        }
+
+        JotForm._errTimeout = setTimeout(function() {
+            window.ErrorNavigation.update(JotForm.currentSection, render);
+            clearTimeout(JotForm._errTimeout);
+        }, 50);
     },
 
     disableGoButton: function () {
@@ -10376,6 +10969,7 @@ var JotForm = {
                     if (!JotForm.validateAll(form)) {
                         JotForm.enableButtons();
                         JotForm.showButtonMessage();
+                        JotForm.updateErrorNavigation(true);
 
                         if (JotForm.submitError) {
                             if (JotForm.submitError == "jumpToSubmit") {
@@ -10493,6 +11087,8 @@ var JotForm = {
                             AutoFill.getInstance(formID).stopSavingData();
                             window.localStorage.clear();
                         }
+                    } else if (JotForm.isNewSaveAndContinueLaterActive && typeof window.localStorage !== 'undefined') {
+                        window.localStorage.removeItem('JFU_SCL_details_' + $$('form').first().readAttribute('id'));
                     }
 
                 } catch (err) {
@@ -11116,7 +11712,7 @@ var JotForm = {
                                 if (!$A(document.getElementsByName(input.name)).map(function (e) {
                                         if (JotForm.isVisible(e)) {
                                             // if this is an sub product checkbox (expanded)
-                                            if (e.readAttribute('type') === "checkbox" && e.value.indexOf('_expanded') > -1) {
+                                            if ((e.readAttribute('type') === "checkbox" || e.readAttribute('type') === "radio") && e.value.indexOf('_expanded') > -1) {
                                                 // if not selected
                                                 if (!e.checked) {
                                                     return false;
@@ -11184,10 +11780,10 @@ var JotForm = {
                     }
 
                     function anyRowElementsFilled(rowElements) {
-                        return rowElements.map(isFilled).some();
+                        return rowElements.map(isFilled).any();
                     }
 
-                    var rows = window.FORM_MODE === 'cardform' ? matrixElement.querySelectorAll('.jfMatrixTable-row,.jfMatrixScale,.jfMatrixInputList-item') : matrixElement.rows;
+                    var rows = window.FORM_MODE === 'cardform' ? matrixElement.querySelectorAll('.jfMatrixTable-row,.jfMatrixScale,.jfMatrixInputList-item,.jfMatrixChoice-table') : matrixElement.rows;
                     var hasOneAnswerEveryRows = Array.from(rows)
                         .map(getElementsInRow)
                         .filter(function notEmpty(el) { return el.length; })
@@ -11196,7 +11792,7 @@ var JotForm = {
 
                     if (vals.include("requireEveryRow") && !hasOneAnswerEveryRows) {
                         return JotForm.errored(input, JotForm.texts.requireEveryRow, dontShowMessage);
-                    } else if (vals.include("requireOneAnswer") && !allCells.map(isFilled).some()) {
+                    } else if (vals.include("requireOneAnswer") && !allCells.map(isFilled).any()) {
                         return JotForm.errored(input, JotForm.texts.requireOne, dontShowMessage);
                     } else if (vals.include('requireEveryCell') && (allCells.map(isInputTypeRadioOrCheckbox).every() ? !hasOneAnswerEveryRows : !allCells.map(isFilled).every())) {
                         return JotForm.errored(input, JotForm.texts.requireEveryCell, dontShowMessage);
@@ -11520,9 +12116,11 @@ var JotForm = {
                     input.validateInput();
                 } else if (input.type == "hidden" || input.type == 'file') {
                     input.validateInput(); // always run on hidden/upload elements
-                } else if (inputContainer.dataset.type === 'control_address') {
-                    input.validateInput();  // always validate address fields on blur
-                } else if (input.hasClassName("form-textarea") && input.up('div').down('.nicEdit-main')) {
+                } 
+                // else if (inputContainer.dataset.type === 'control_address') {
+                //     input.validateInput();  // always validate address fields on blur
+                // } 
+                else if (input.hasClassName("form-textarea") && input.up('div').down('.nicEdit-main')) {
                     input.validateInput();  // validate rich text area
                 } else if (input.hasClassName("pad")) {
                     input.validateInput(); // signature
@@ -12308,6 +12906,10 @@ var JotForm = {
         }
 
         try {
+            if (window.buildermode && buildermode === 'card') {
+                return;
+            }
+
             var jqObject = jQuery(toSelector);
 
             //initiate masking for phones.
@@ -12317,19 +12919,20 @@ var JotForm = {
                     .attr('placeholder', '');
             }
             else {
+              setTimeout(function(){
                 jqObject.inputmask(maskValue, {
-                    placeholder: "_",
-                    autoclear: false,
-                    definitions: definitions
-                })
-                    // trigger change event on blur
-                    .on('blur', function(e) { e.target.triggerEvent('change'); })
-                    .attr('maskValue', maskValue)
-                    .attr('placeholder', placeholder);
+                  placeholder: "_",
+                  autoclear: false,
+                  definitions: definitions
+              })
+                  // trigger change event on blur
+                  .on('blur', function(e) { e.target.triggerEvent('change'); })
+                  .attr('maskValue', maskValue)
 
-                // move the caret to first placeholder char
-                var caretPos = jqObject.val().indexOf('_');
-                jqObject.caret(caretPos);
+              // move the caret to first placeholder char
+              var caretPos = jqObject.val().indexOf('_');
+              jqObject.caret(caretPos);
+              },0)       
             }
         } catch (error) {
             console.log(error);
@@ -12494,7 +13097,7 @@ var JotForm = {
         }
 
         function createImageEl(uuid) {
-            var base = '//events.jotform.com/';
+            var base = 'https://events.jotform.com/';
             if (typeof JotForm.enterprise !== "undefined" && JotForm.enterprise) {
                 base = '/events/';
             }
@@ -12816,23 +13419,29 @@ var JotForm = {
                     var isNextEnabled = isBackEnabled = true;
                     questions.each(function(q) {
                         q.removeClassName('isActive');
+                        q.setAttribute('aria-hidden', true);
                         if (q.readAttribute('data-order') == activeQuestionOrder) {
+                            $(q).removeAttribute('aria-hidden');
                             $(q).addClassName('isActive');
                         }
                     });
                     if (bullets) {
                         bullets.each(function(q) {
                             q.removeClassName('isActive');
+                            q.setAttribute('aria-hidden', true);
                             if (q.readAttribute('data-order') == activeQuestionOrder) {
                                 $(q).addClassName('isActive');
+                                $(q).removeAttribute('aria-hidden');
                             }
                         });
                     }
                     var choices = $(matrix).select('.jfMatrix-choiceWrapper');
                     choices.each(function(c) {
                         c.removeClassName('isActive');
+                        c.setAttribute('aria-hidden', true);
                         if (c.readAttribute('data-order') == activeQuestionOrder) {
                             $(c).addClassName('isActive');
+                            $(c).removeAttribute('aria-hidden');
                         }
                     });
                     // Set button's activity
@@ -12843,9 +13452,11 @@ var JotForm = {
                     }
                     if ($(matrix).select('.forMatrixPrev').length > 0) {
                         $(matrix).select('.forMatrixPrev')[0].disabled = !isBackEnabled;
+                        $(matrix).select('.forMatrixPrev')[0].setAttribute('aria-hidden', !isBackEnabled);
                     }
                     if ($(matrix).select('.forMatrixNext').length > 0) {
                         $(matrix).select('.forMatrixNext')[0].disabled = !isNextEnabled;
+                        $(matrix).select('.forMatrixNext')[0].setAttribute('aria-hidden', !isNextEnabled);
                     }
                     // set question number
                     $(matrix).select('.jfMatrixProgress-text span')[0].innerHTML = activeQuestionOrder + 1;
@@ -12927,7 +13538,9 @@ var JotForm = {
         if(document.getElementById('stage')) { return null; }
 
         if(typeof CardForm === "object" && CardForm.layoutParams && CardForm.layoutParams.hasTouch === false) {
-            JotForm.setRatingClickTransfer(id);
+            if (!JotForm.accessible) {
+                JotForm.setRatingClickTransfer(id);
+            }
         }
         var rating = document.getElementById('rating_' + id);
         if(!$(rating)) return;
@@ -12944,7 +13557,9 @@ var JotForm = {
 
         ratingItems.addEventListener('click', function(evt) {
             if(typeof CardForm === "object" && CardForm.layoutParams && CardForm.layoutParams.hasTouch === false) {
-                ratingHiddenInput && ratingHiddenInput.focus();
+                if (!JotForm.accessible) {
+                    ratingHiddenInput && ratingHiddenInput.focus();
+                }
             }
         });
 
@@ -13092,7 +13707,7 @@ var JotForm = {
     setRatingClickTransfer: function(id) {
         document.body.addEventListener('click',function() {
             var eventTarget = document.querySelector('.jfCard-wrapper.isVisible #rating_' + id + ' input');
-            eventTarget && eventTarget.focus();
+            // eventTarget && eventTarget.focus();
         });
     },
 
@@ -13257,6 +13872,77 @@ var JotForm = {
         }
         var src = url + '/ownerView.php?id=' + formID;
         window.parent.postMessage(['loadScript', src, formID].join(':'), '*');
+    },
+
+    _xdr: function(url, method, data, callback, errback) {
+        var req;
+        if(XMLHttpRequest) {
+            JotForm.createXHRRequest(url, method, data, callback, errback);
+        } else if(XDomainRequest) {
+            req = new XDomainRequest();
+            req.open(method, url);
+            req.onerror = errback;
+            req.onload = function() {
+                callback(req.responseText);
+            };
+            req.send(data);
+        } else {
+            errback(new Error('CORS not supported'));
+        }
+    },
+
+    createXHRRequest: function(url, method, data, callback, errback) {
+        var req = new XMLHttpRequest();
+        if('withCredentials' in req) {
+            req.open(method, url, true);
+            req.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+            req.onerror = errback;
+            req.onreadystatechange = function() {
+                if (req.readyState === 4) {
+                    if (req.status >= 200 && req.status < 400) {
+                        var resp = JSON.parse(req.responseText);
+                        var responseErrorCodes = [400, 404, 401, 503, 301];
+                        if(responseErrorCodes.indexOf(resp.responseCode) > -1) {
+                            if(resp.responseCode === 301) {
+                                url = url.replace('api.', 'eu-api.');
+                                createXHRRequest(url, method, data, callback, errback);
+                                return;
+                            }
+                            errback(resp.message, resp.responseCode);
+                            return;
+                        }
+                        callback(JSON.parse(req.responseText));
+                    } else {
+                        errback(new Error('Response returned with non-OK status'));
+                    }
+                }
+            };
+            req.send(data);
+        }
+    },
+
+    //---Serialize objects for POST and PUT
+    serialize: function(data) {
+        var str = [];
+        for(var p in data)
+            str.push(encodeURIComponent(p) + "=" + encodeURIComponent(data[p]));
+            return str.join("&");
+    },
+
+    preparePOST: function(obj,label) {
+        postData = new Object();
+        for (var key in obj) {
+            value = obj[key];
+            if(label) {
+                if(key.indexOf('_') !== -1) {
+                    keys = key.split('_');
+                    key = keys[0] + "][" + keys[1];
+                }
+                key = "[" + key + "]";
+            }
+            postData[ label + key] = value;
+        }
+        return postData;
     }
 };
 
@@ -13274,13 +13960,50 @@ function getQuerystring(key, default_) {
 }
 
 function onProductImageClicked(index) {
+    var isNewUi = false;
+    if ($$('.image-overlay-image')[0]) {
+        isNewUi = true;
+    }
 
-    var imageUrls;
+    var formProductDOM = $$('.form-overlay-item');
+    var imagesDOM;
+    var imageUrls = [];
 
-    if (window.getAllProperties && window.getAllProperties().form_products) {
-        imageUrls = window.getAllProperties().form_products.map(function(p) { return p.icon }).filter(function(p) { return p });
-    } else if (document.querySelectorAll) {
-        imageUrls = Array.prototype.map.call(document.querySelectorAll('.form-product-item img'), function(p) { return p.src });
+    //  Clear products at first.
+    formProductDOM = formProductDOM.filter(function(product) {
+        if (product.getAttribute('hasimages') === 'true' || product.getAttribute('hasicon') === 'true') {
+            return true;
+        }
+
+        if (product.querySelector('img') && !product.querySelector('img').src.indexOf('noImage-placeholder.svg') > -1) {
+            return true;
+        }
+
+        return false;
+    });
+
+    if (isNewUi) {
+        if (formProductDOM[index]) {
+            if (formProductDOM[index].getAttribute('hasimages') === 'true') {
+                imagesDOM = formProductDOM[index].getElementsByTagName('img');
+            } else if (formProductDOM[index].getAttribute('hasimages') === 'false' && formProductDOM[index].getAttribute('hasicon') === 'true') {
+                imagesDOM = [ formProductDOM[index].getAttribute('iconValue') ];
+            }
+        }
+        for (var i = 0; i < imagesDOM.length; i++) {
+            imageUrls.push(imagesDOM[i].src || imagesDOM[i]);
+        }
+    } else {
+        if (document.querySelector('.form-overlay-item img')) {
+            imageUrls.push(document.querySelectorAll('.form-overlay-item img')[index].src);
+        } else if (document.querySelectorAll('.form-product-item img')){
+            imageUrls.push(document.querySelectorAll('.form-product-item img')[index].src);
+        }
+    }
+
+    // If the cache is remove but the image hasn't added yet.
+    if (isNewUi && imageUrls.length === 0) { 
+        imageUrls.push(document.querySelectorAll('.form-overlay-item img')[index].src);
     }
 
     if (!imageUrls || !imageUrls.length) return;
@@ -13288,54 +14011,94 @@ function onProductImageClicked(index) {
     var divOverlay = document.createElement('div');
     var divOverlayContent = document.createElement('div');
     var divImgWrapper = document.createElement('div');
+    var divSliderNavigation = document.createElement('div');
+    var divThumbnail = document.createElement('ul');
     divOverlay.id = 'productImageOverlay';
-    divOverlay.className = 'overlay';
+    divOverlay.className = isNewUi ? 'overlay new_ui' : 'overlay old_ui';
     divOverlay.tabIndex = -1;
     divOverlayContent.className = 'overlay-content';
     divImgWrapper.className = 'img-wrapper';
+    divSliderNavigation.className = 'slider-navigation';
     divOverlay.appendChild(divOverlayContent);
     divOverlayContent.appendChild(divImgWrapper);
+    divOverlayContent.appendChild(divSliderNavigation);
+    
+    if (isNewUi) {
+        divSliderNavigation.appendChild(divThumbnail);
+    }
 
-    var prevButton = document.createElement('span');
-    var nextButton = document.createElement('span');
-    var closeButton = document.createElement('span');
-
-    prevButton.innerText = 'prev';
-    nextButton.innerText = 'next';
-    closeButton.innerText = '( X )';
+    var prevButton = document.createElement('small');
+    var nextButton = document.createElement('small');
+    var closeButton = document.createElement('small');
+    closeButton.innerText = 'X';
 
     prevButton.className = 'lb-prev-button';
     nextButton.className = 'lb-next-button';
     closeButton.className = 'lb-close-button';
 
-    divOverlayContent.appendChild(prevButton);
-    divOverlayContent.appendChild(nextButton);
+    divImgWrapper.appendChild(prevButton);
+    divImgWrapper.appendChild(nextButton);
     divOverlayContent.appendChild(closeButton);
-    imageUrls = imageUrls.filter(function(imageUrl) {
-      return !imageUrl.includes("noImage-placeholder.svg");
-    });
 
     var images = imageUrls.map(function(url) {
-        var img = document.createElement('img');
-        img.style.display = 'none';
-        img.src = url;
-        return img;
+        var span = document.createElement('span');
+        span.setAttribute('style', 'background-image: url("' + encodeURI(url) + '"); display: none');
+        span.setAttribute('url', encodeURI(url));
+        return span;
     });
 
-    // show clicked image
-    images[index].style.display = 'block';
-
-    images.each(function(p) { divImgWrapper.appendChild(p); });
-
-    var visibleIndex = index;
+    images[0].style.display = 'block';
+    var visibleIndex = 0;
     var imgLength = images.length;
 
-    var displayPrevious = function() {
+    var displayGivenIndex = function(displayIndex) {
         images[visibleIndex].style.display = 'none'; // hide
+        visibleIndex = displayIndex;
+        // arrangeImageSize();
+    };
+
+    var sliderListItemClickHandler = function(index, event) {
+        images[visibleIndex].style.display = 'none';
+        divThumbnail.childElements()[visibleIndex].classList.remove('selected');
+        visibleIndex = index;
+        images[visibleIndex].style.display = 'block';
+        divThumbnail.childElements()[index].classList.add('selected');
+    }
+    
+    images.each(function(p, index) {
+        divImgWrapper.appendChild(p);
+
+        if (images.length > 1) {
+            if (!divOverlayContent.hasClassName('has_thumbnail')) {
+                divOverlayContent.addClassName('has_thumbnail');
+            }
+
+            var listItem = document.createElement('li');
+            listItem.onclick = sliderListItemClickHandler.bind(this, index);
+            listItem.setAttribute('style', 'background-image: url("' + p.getAttribute('url') + '")');
+            if (index === 0) {
+                listItem.className = "selected";
+            }
+    
+            divThumbnail.appendChild(listItem);
+        }
+    });
+    
+    var displayPrevious = function() {
+        images[visibleIndex].style.display = 'none';
         visibleIndex -= 1;
         if (visibleIndex == -1) visibleIndex = imgLength - 1;
         images[visibleIndex].style.display = 'block';
-        arrangeImageSize();
+
+        divThumbnail.childElements().each(function (element, index) {
+            if (visibleIndex === index) {
+                element.className = "selected";
+            } else {
+                element.className = "";
+            }
+        });
+
+        // arrangeImageSize();
     }
 
     prevButton.onclick = displayPrevious;
@@ -13345,7 +14108,16 @@ function onProductImageClicked(index) {
         visibleIndex += 1;
         if (visibleIndex == imgLength) visibleIndex = 0;
         images[visibleIndex].style.display = 'block';
-        arrangeImageSize();
+
+        divThumbnail.childElements().each(function (element, index) {
+            if (visibleIndex === index) {
+                element.className = "selected";
+                element.scrollIntoView();
+            } else {
+                element.className = "";
+            }
+        });
+        // arrangeImageSize();
     }
 
     nextButton.onclick = displayNext;
@@ -13363,25 +14135,25 @@ function onProductImageClicked(index) {
     divOverlay.onclick = close;
 
     var arrangeImageSize = function() {
-        var width = window.innerWidth;
-        var height = window.innerHeight;
+        // var width = window.innerWidth;
+        // var height = window.innerHeight;
 
-        var maxSize = (Math.min(width, height) * 0.75) + 'px';
-        var size = width < height ? { maxWidth: maxSize, height: 'auto', width: 'auto', maxHeight: 'none' } : { width: 'auto', maxHeight: maxSize, height: 'auto', maxWidth: 'none' };
+        // var maxSize = (Math.min(width, height) * 0.75) + 'px';
+        // var size = width < height ? { maxWidth: maxSize, height: 'auto', width: 'auto', maxHeight: 'none' } : { width: 'auto', maxHeight: maxSize, height: 'auto', maxWidth: 'none' };
 
-        divOverlayContent.style.maxWidth = size.maxWidth;
-        divOverlayContent.style.maxHeight = size.maxHeight;
-        divOverlayContent.style.width = size.width;
-        divOverlayContent.style.height = size.height;
+        // divOverlayContent.style.maxWidth = size.maxWidth;
+        // divOverlayContent.style.maxHeight = size.maxHeight;
+        // divOverlayContent.style.width = size.width;
+        // divOverlayContent.style.height = size.height;
 
-        images[visibleIndex].style.maxHeight = size.maxHeight;
-        images[visibleIndex].style.maxWidth = size.maxWidth;
-        images[visibleIndex].style.width = size.width;
-        images[visibleIndex].style.height = size.height;
+        // images[visibleIndex].style.maxHeight = size.maxHeight;
+        // images[visibleIndex].style.maxWidth = size.maxWidth;
+        // images[visibleIndex].style.width = size.width;
+        // images[visibleIndex].style.height = size.height;
     }
 
     var resizeCallback = function(e) {
-        arrangeImageSize();
+        // arrangeImageSize();
     }
 
     window.onresize = resizeCallback;
@@ -13400,10 +14172,7 @@ function onProductImageClicked(index) {
     }
     document.body.appendChild(divOverlay);
     divOverlay.focus();
-    arrangeImageSize();
+    // arrangeImageSize();
 }
-
-
-
 // We have to put this event because it's the only way to catch FB load
 window.fbAsyncInit = JotForm.FBInit.bind(JotForm);
