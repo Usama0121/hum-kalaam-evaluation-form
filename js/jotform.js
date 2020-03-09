@@ -507,6 +507,84 @@ var JotForm = {
             }
         }
     },
+    /**
+     * Initializes sentry for classic forms
+    */
+    initSentry: function() {
+        var origin = window.location.origin;
+
+        if (!window.Sentry && window.FORM_MODE !== 'cardform' && !origin.include('jotform.pro')) {
+            var script = new Element('script', {
+                src: 'https://browser.sentry-cdn.com/5.13.0/bundle.min.js',
+                integrity: 'sha384-ePH2Cp6F+/PJbfhDWeQuXujAbpil3zowccx6grtsxOals4qYqJzCjeIa7W2UqunJ',
+                crossOrigin: 'anonymous'
+            });
+
+            script.on('load', function() {
+                if (window.Sentry) {
+                    window.Sentry.init({
+                        // ignore common browser extensions, plugins and only allow jotform domain errors
+                        dsn: 'https://fc3f70667fb1400caf8c27ed635bd4e1@sentry.io/4142374',
+                        enviroment: 'production',
+                        whitelistUrls: [
+                            /https?:\/\/.*jotform\.com/,
+                            /https?:\/\/cdn\.jotfor\.ms/
+                        ],
+                        integrations: [
+                          new Sentry.Integrations.GlobalHandlers({
+                            onunhandledrejection: false 
+                          })
+                        ],
+                        ignoreUrls: [
+                            // Facebook flakiness
+                            /graph\.facebook\.com/i,
+                            // Facebook blocked
+                            /connect\.facebook\.net\/en_US\/all\.js/i,
+                            // Woopra flakiness
+                            /eatdifferent\.com\.woopra-ns\.com/i,
+                            /static\.woopra\.com\/js\/woopra\.js/i,
+                            // Chrome extensions
+                            /extensions\//i,
+                            /^chrome:\/\//i,
+                            // Other plugins
+                            /127\.0\.0\.1:4001\/isrunning/i, // Cacaoweb
+                            /webappstoolbarba\.texthelp\.com\//i,
+                            /metrics\.itunes\.apple\.com\.edgesuite\.net\//i,
+                            /tinymce/i
+                        ],
+                        ignoreErrors: [
+                            // Random plugins/extensions
+                            'top.GLOBALS',
+                            // See: http://blog.errorception.com/2012/03/tale-of-unfindable-js-error. html
+                            'originalCreateNotification',
+                            'canvas.contentDocument',
+                            'MyApp_RemoveAllHighlights',
+                            'http://tt.epicplay.com',
+                            'Can\'t find variable: ZiteReader',
+                            'jigsaw is not defined',
+                            'ComboSearch is not defined',
+                            'http://loading.retry.widdit.com/',
+                            'atomicFindClose',
+                            // Facebook borked
+                            'fb_xd_fragment',
+                            // ISP "optimizing" proxy - `Cache-Control: no-transform` seems to
+                            // reduce this. (thanks @acdha)
+                            // See http://stackoverflow.com/questions/4113268
+                            'bmi_SafeAddOnload',
+                            'EBCallBackMessageReceived',
+                            // See http://toolbar.conduit.com/Developer/HtmlAndGadget/Methods/JSInjection.aspx
+                            'conduitPage',
+                            'tinymce',
+                            // Common error caused by test software on a specific chrome version
+                            'GetScreenshotBoundingBox',
+                            'for='
+                        ]
+                    });
+                }
+            });
+            $$('head')[0].insert(script);
+        }
+    },
     getAPIEndpoint: function() {
         var origin = window.location.origin;
 
@@ -582,6 +660,8 @@ var JotForm = {
     init: function (callback) {
         var ready = function () {
             try {
+                this.initSentry();
+
                 if ( typeof $$('.jotform-form') !== 'undefined' && 
                     typeof $$('.jotform-form')[0] !== 'undefined' && 
                     typeof $$('.jotform-form')[0].reset === 'function' && 
@@ -790,6 +870,8 @@ var JotForm = {
                 if (JotForm.newDefaultTheme) {
                     this.initTimev2Inputs();
                     this.initOtherV2Options();
+                    // createNewComponent(data-type, function).render()
+                    createNewComponent('control_matrix', this.initMatrixTableV2).render();
                 }
 
                 // this.handleChinaCensorship();
@@ -9598,6 +9680,43 @@ var JotForm = {
     },
 
     /**
+     * init matrix table fields for default theme v2
+     */
+    initMatrixTableV2: function (el) {
+        console.log('loaded');
+        // var eventType = ['click', 'space'];
+        var inputElArr = el[0].querySelectorAll('input.form-radio');
+
+        var checkBeforeFunc = function (input) {
+            if (
+                !input.getAttribute('checked-before')
+                || input.getAttribute('checked-before') === '0'
+            ) {
+                input.setAttribute('checked-before', 1);
+                input.checked = true;
+            } else {
+                input.setAttribute('checked-before', 0);
+                input.checked = false;
+            }
+        };
+
+        for (var i = 0; i < inputElArr.length; i++) {
+            inputElArr[i].addEventListener('click', function (e) {
+                checkBeforeFunc(e.target);
+            });
+
+            inputElArr[i].addEventListener('keyup', function (e) {
+                e.preventDefault();
+                var charCode = e.which || e.keyCode || e.charCode;
+
+                if (charCode === 32) {
+                    checkBeforeFunc(e.target);
+                }
+            });
+        }
+    },
+
+    /**
      * Handles the functionality of control_number tool
      */
     initNumberInputs: function () {
@@ -14174,5 +14293,42 @@ function onProductImageClicked(index) {
     divOverlay.focus();
     // arrangeImageSize();
 }
+/*
+**
+* this wrapper created to develop and use common utilities for new Default Theme fields
+*/
+function createNewComponent(dataType, func) {
+    var newComponent = new newDefaultThemeHandler(dataType);
+    newDefaultThemeHandler.prototype.run = func;
+
+    return newComponent;
+}
+
+function newDefaultThemeHandler(dataType) {
+    this.dataType = dataType || '';
+    this.targetEl = null;
+
+    // check dom elements based on paramater (dataType)
+    this.initElement = function () {
+        if (!this.dataType) {
+            return false;
+        }
+
+        this.targetEl = document.querySelectorAll('*[data-type="' + this.dataType + '"]');
+
+        if (this.targetEl.length < 1) {
+            return false;
+        }
+
+        return true;
+    }
+
+    this.render = function () {
+        if (this.initElement()) {
+            this.run(this.targetEl);
+        }
+    }
+}
+
 // We have to put this event because it's the only way to catch FB load
 window.fbAsyncInit = JotForm.FBInit.bind(JotForm);

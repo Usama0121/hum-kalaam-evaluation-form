@@ -1199,12 +1199,13 @@ screen and (max-device-width: 415px) and (orientation: landscape) {
 /* Payments: PayPal Commarce Platform */
 #paypal-commerce-platform-container * {
 	box-sizing: border-box;
-	font-family: sans-serif;
 }
+
 #paypal-commerce-platform-container {
 	border: 1px solid #EEEEEE;
 	border-radius: 2px;
 	overflow: hidden;
+	border-color: rgba(0, 0, 0, 0.08);
 }
 .paypal-toggle-content {
 }
@@ -1225,12 +1226,12 @@ screen and (max-device-width: 415px) and (orientation: landscape) {
 	line-height: 44px;
 	font-weight: bold;
 	font-size: 13px;
-	color: #1D2543;
 	border-bottom: 1px solid #EEE;
 	cursor: pointer;
 	border-right: 1px solid #EEE; 
-	background-color: #fff;
+	background-color: transparent;
 	outline: none !important;
+	border-color: rgba(0, 0, 0, 0.1) !important;
 }
 
 .paypal-toggle .CC_ico {
@@ -1246,8 +1247,9 @@ screen and (max-device-width: 415px) and (orientation: landscape) {
 }
 
 .paypal-toggle .selected {
-	background-color: #FCFCFC !important;
-	border-bottom: 1px solid #FCFCFC;
+	background-color: rgba(0, 0, 0, 0.04)!important; 
+	border-bottom: 0px solid #FCFCFC;
+	border-color: rgba(0, 0, 0, 0.04)!important;  
 }
 
 .paypal-toggle button:last-child { border-right: 0px solid #EEE; }
@@ -1257,7 +1259,7 @@ screen and (max-device-width: 415px) and (orientation: landscape) {
 	background-size: 72px;
 	background-repeat: no-repeat;
 	text-align: right;
-	color: #fff;
+	color: rgba(0, 0, 0, 0)!important;
 }
 
 
@@ -1268,17 +1270,17 @@ screen and (max-device-width: 415px) and (orientation: landscape) {
 
 .paypal-toggle-content {
 	display: flex;
-	background-color: #FCFCFC;
+	background-color: rgba(0, 0, 0, 0.04)!important; 
 	padding: 20px;
 }
-.content-area { width: 70%; }
-.content-area:after { content: ''; display: block; width: 100%; clear: both; }
-.sidebar {
-	width: 30%; 
-	position: relative;
-	text-align: center;
-	border-left: 1px dashed #E0E0E0;
-	padding-left: 22px;
+.content-area {
+	/*width: 70%;*/
+	width:	330px;
+}
+.content-area:after {
+	content: ''; display:
+	block; width: 100%;
+	clear: both;
 }
 
 #paypal-credit-card-fields {
@@ -1288,22 +1290,25 @@ screen and (max-device-width: 415px) and (orientation: landscape) {
 #paypal-credit-card-fields .paypal-input:nth-child(1) { width: 50%; }
 #paypal-credit-card-fields .paypal-input:nth-child(2) { width: 50%; }
 #paypal-credit-card-fields .paypal-input:nth-child(3) { width: 100%; }
-#paypal-credit-card-fields .paypal-input:nth-child(4) { width: 42%; }
-#paypal-credit-card-fields .paypal-input:nth-child(5) { width: 36%; }
-
+#paypal-credit-card-fields .paypal-input:nth-child(4) { width: 50%; }
+#paypal-credit-card-fields .paypal-input:nth-child(5) { width: 50%; }
+#paypal-credit-card-fields .paypal-input:nth-child(5) div.form-textbox { width: 50%; }
 
 #paypal-credit-card-fields .paypal-input {
 	float: left;
-	padding-bottom: 16px;
-	padding-right: 12px;
+	/*padding-bottom: 16px;
+	padding-right: 12px;*/
+	padding-bottom: 10px;
+	padding-right: 10px;
 	box-sizing: border-box;
 }
 
 #paypal-credit-card-fields .paypal-input label {
 	display: block;
-	font-size: 12px;
-	font-weight: 600;
-	padding-bottom: 6px;
+	font-size: 0.786em;
+	padding-bottom: 3px;
+	font-weight: normal;
+	padding-left: 2px;
 }
 
 #paypal-credit-card-fields .paypal-input input,
@@ -1314,10 +1319,12 @@ screen and (max-device-width: 415px) and (orientation: landscape) {
 	width: 100%;
 	border: 1px solid #E0E0E0;
 	border-radius: 2px;
-	height: 36px !important;
-	line-height: 34px;
+	height: 25px !important;
+	line-height: 24px;
 	box-shadow: none;
 	padding: 0 12px;
+	/*border-color: rgba(0, 0, 0, 0.04) !important;
+	background-color: rgba( 256, 256, 256, 0.8) !important;*/
 }
 
 .powered_by_label { padding-top: 40px;
@@ -1356,13 +1363,9 @@ screen and (max-device-width: 415px) and (orientation: landscape) {
 }
 div[render-paypal-type="paypal-card-fields"] {
 	.content-area {}
-	.sidebar {}
 }
 
 div[render-paypal-type="paypal-smart-buttons"] 	.content-area { margin: 0 auto; }
-div[render-paypal-type="paypal-smart-buttons"] 	.sidebar { display: none; }
-	
-
 
 .paypal-toggle-content[render-paypal-type="paypal-card-fields"] #paypal-credit-card-fields{
 	display: block;
@@ -1381,17 +1384,10 @@ screen and (max-device-width: 415px) and (orientation: landscape) {
 	.paypal-toggle-content {
 		display: block;
 	}
-	.content-area,
-	.sidebar {
+	.content-area
+	{
 		width: 100%;
 		float: none;
-	}
-	.sidebar {
-		width: 100%;
-		float: none;
-		border-left: 0;
-		border-top: 1px dashed #E0E0E0;
-		padding: 12px 0;
 	}
 	.powered_by_label {
 		padding-top: 20px;
